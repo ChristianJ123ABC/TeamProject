@@ -1,0 +1,90 @@
+
+.navbar {
+    background: #2c3e50; /* Dark Blue */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+  
+
+  .logo a {
+    font-size: 24px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #f39c12;
+  }
+  
+ 
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+  }
+  
+  .nav-links li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    transition: color 0.3s;
+  }
+  
+  .nav-links li a:hover {
+    color: #f39c12; 
+  }
+
+.auth-buttons {
+    display: flex;
+    gap: 10px; 
+    align-items: center; 
+  }
+  
+
+  .auth-buttons .btn {
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+  }
+  
+  .auth-buttons .login {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+  }
+  
+  .auth-buttons .signup {
+    background-color: #f39c12;
+    color: white;
+    border: 2px solid #f39c12;
+  }
+  
+  
+  .auth-buttons .btn:hover {
+    opacity: 0.8;
+  }
+  
+ 
+.basket-icon {
+    color: white;
+    font-size: 24px;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .basket-icon:hover {
+    color: #f39c12; 
+    transform: scale(1.2);
+  }
+  .nav-icon {
+    font-size: 18px;
+    margin-right: 5px;
+    color: white;
+  }
