@@ -1,9 +1,9 @@
 const images = [
-    "../images/delivery.jpg",
-    "../images/making-order.jpg",
-    "../images/packing-order.jpg",
-    "../images/recycle-image.jpg",
-    "../images/takeaway.jpg"
+    "images/delivery.jpg",
+    "images/making-order.jpg",
+    "images/packing-order.jpg",
+    "images/recycle-image.jpg",
+    "images/takeaway.jpg"
   ];
   
   let currentImage = 0;
@@ -14,5 +14,5 @@ const images = [
   }
   
   setInterval(changeImage, 4000); // Change image every 4 seconds
-  changeImage(); // Set the first image immediately
+  changeImage(); 
   
