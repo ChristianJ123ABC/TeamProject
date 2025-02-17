@@ -34,8 +34,12 @@ import re
 
 
 
+
+
+
+
 #Used to access the Database / keep users logged in 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 app.config["SESSION_PERMANENT"] = True
 app.config['MYSQL_HOST'] = 'viaduct.proxy.rlwy.net'
 app.config['MYSQL_USER'] = 'root'
