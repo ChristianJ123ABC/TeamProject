@@ -12,7 +12,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
        
-            <a class="navbar-brand logo" href="home.html">Can & Dash</a>
+            <a class="navbar-brand logo" href="{{ url_for('home') }}">Can & Dash</a>
     
         
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -22,27 +22,47 @@
         
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="recycle.html">Recycle</a></li>
-                    <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('recycle') }}">Recycle</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('profile') }}">Profile</a></li>
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="basket.html">
+                        <a class="nav-link d-flex align-items-center" href="{{url_for('basket') }}">
                         </a>
                     </li>
                 </ul>
     
              
                 <div class="d-flex align-items-center">
-                    <a href="basket.html" class="nav-link basket-icon me-3">🛒</a>
-                    <a href="login.html" class="btn login me-2">Login</a>
-                    <a href="register.html" class="btn signup">Sign Up</a>
+                    <a href="{{url_for('basket') }}" class="nav-link basket-icon me-3">🛒</a>
+                    <a href="{{ url_for('login') }}" class="btn login me-2">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn signup">Sign Up</a>
                 </div>
             </div>
         </div>
     </nav>
 
 
-    <h1>Signup...</h1>
+    {% with messages = get_flashed_messages()%}
+             {% if messages%}
+                {% for message in messages%}
+                <h2>{{message}}</h2>
+                 {%endfor%}
+                {%endif%}
+                {%endwith%}
+            <h1>Register Page</h1>
+                <form method = "POST" action="{{ url_for('register') }}">
+                    <input type = "text" name = "username" placeholder = "Username" required><br>
+                    <input type = "password" name = "password" placeholder = "Password" required><br>
+                    <input type = "email" name = "email" placeholder = "Email" required><br>
+                    <select name = "role">
+                        <option value = "driver">Employee (Delivery Driver)</option>
+                        <option value = "food_owner">Food Owner / Promoter</option>
+                        <option value = "customer">Customer</option>
+                    </select><br>
+                    <button type = "submit">Register</button>
+                </form>
+                <p><a href ="{{ url_for('home') }}">Home Page</a></p>
+                <p>Account already created? <a href="{{ url_for('login') }}">Login</a></p>
 
 
 

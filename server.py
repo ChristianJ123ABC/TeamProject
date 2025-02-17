@@ -167,8 +167,11 @@ def login():
         elif not user:
             flash("Invalid email address")
         
-        elif not check_password_hash(user["password"], password):
+        #used if you forget the user password: elif password != user["password"]
+        elif not check_password_hash(user["password"],password):
             flash("Invalid password")
+
+        
             
         #depending on the type of role, it will send you to a certain dashboard
         else:
@@ -189,7 +192,17 @@ def login():
         return render_template("login.html")
         
     
+@app.route('/basket')
+def basket():
+    return render_template("basket.html")
 
+@app.route('/recycle')
+def recycle():
+     return render_template("recycle.html")
+
+@app.route('/profile')
+def profile():
+    return render_template("profile.html")
    
 #pages / dashboards for each role
 @app.route('/customer')
