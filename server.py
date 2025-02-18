@@ -97,8 +97,17 @@ def home():
 def register():
 
     #displays the register page 
+    if "user_id" in session:
+        if(session["role"] == "customer"):
+            return redirect(url_for("customer"))
+        elif(session["role"] == "driver"):
+            return redirect(url_for("driver"))
+        elif(session["role"] == "food_owner"):
+            return redirect(url_for("promoter"))
+        
     if request.method == "GET":
         return render_template("register.html")
+    
     else:
         #grabs the information from the form textfield and makes it into variables
         username = request.form["username"]
@@ -147,8 +156,17 @@ def register():
 @app.route('/login', methods = ["GET", "POST"])
 def login():
     #displays the login page 
+    if "user_id" in session:
+        if(session["role"] == "customer"):
+            return redirect(url_for("customer"))
+        elif(session["role"] == "driver"):
+            return redirect(url_for("driver"))
+        elif(session["role"] == "food_owner"):
+            return redirect(url_for("promoter"))
+        
     if request.method == "GET":
         return render_template("login.html")
+    
     
     else:
         email = request.form["email"]
