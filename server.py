@@ -22,6 +22,11 @@
 #Session permanence
 #https://stackoverflow.com/questions/37227780/flask-session-persisting-after-close-browser
 
+#insertion / updating text
+#https://stackoverflow.com/questions/42554368/python-flask-inserting-data-from-form
+#https://stackoverflow.com/questions/12277933/send-data-from-a-textbox-into-flask
+#https://stackoverflow.com/questions/61625715/how-to-write-input-from-input-box-from-a-flask-website-into-a-csv-or-txt-file
+
 #Imports for functionality of the server / backend
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_mysqldb import MySQL
@@ -99,10 +104,15 @@ def register():
     #displays the register page 
     if "user_id" in session:
         if(session["role"] == "customer"):
+            flash("You must log out to create another account")
             return redirect(url_for("customer"))
+        
         elif(session["role"] == "driver"):
+            flash("You must log out to create another account")
             return redirect(url_for("driver"))
+        
         elif(session["role"] == "food_owner"):
+            flash("You must log out to create another account")
             return redirect(url_for("promoter"))
         
     if request.method == "GET":
@@ -147,7 +157,7 @@ def register():
         cursor.close()
         flash("Account created successfully!")
 
-        #Prevent any return errors
+        
         return render_template("register.html")
         
 
@@ -158,11 +168,18 @@ def login():
     #displays the login page 
     if "user_id" in session:
         if(session["role"] == "customer"):
+            flash("You are already logged in")
             return redirect(url_for("customer"))
+            
         elif(session["role"] == "driver"):
+            flash("You are already logged in")
             return redirect(url_for("driver"))
+        
         elif(session["role"] == "food_owner"):
+            flash("You are already logged in")
             return redirect(url_for("promoter"))
+        
+    
         
     if request.method == "GET":
         return render_template("login.html")
@@ -206,7 +223,7 @@ def login():
             else:
                 return redirect(url_for("promoter"))
 
-        #Prevent any return errors
+        
         return render_template("login.html")
         
     
@@ -218,10 +235,31 @@ def basket():
 def recycle():
      return render_template("recycle.html")
 
-@app.route('/profile')
+
+
+@app.route('/profile', methods=["GET", "POST"])
 def profile():
-    return render_template("profile.html")
-   
+    
+    #If the user is not logged in, display this
+    if "user_id" not in session:
+        flash("You must have created an account to view the profile page")
+        return render_template('home.html')
+
+    
+
+    #same method as register, used to grab the details from Database and insert them into the form textfields    
+    if request.method == "POST":
+        email = request.form["email"]
+        username = request.form["username"] 
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
+                            (username, email))
+        mysql.connection.commit()
+        cursor.close()
+
+    return render_template("profile.html", username=session["username"], email=session["email"])
+
 #pages / dashboards for each role
 @app.route('/customer')
 def customer():

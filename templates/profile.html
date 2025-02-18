@@ -1,3 +1,8 @@
+<!-- insertion / updating text -->
+<!-- >https://stackoverflow.com/questions/42554368/python-flask-inserting-data-from-form -->
+<!-- #https://stackoverflow.com/questions/12277933/send-data-from-a-textbox-into-flask -->
+<!-- #https://stackoverflow.com/questions/61625715/how-to-write-input-from-input-box-from-a-flask-website-into-a-csv-or-txt-file -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,12 +61,12 @@
                 <img src="images/profile.jpg" alt="Profile">
             </div>
             <div class="profile-details">
-                <form>
-                    <label>Full Name</label>
-                    <input type="text" placeholder="Your name" disabled>
+                <form action = "{{ url_for('profile') }}" method="POST">
+                    <label>Username</label>
+                    <input type="text" placeholder="Username: " value = "{{ username }}" disabled>
 
                     <label>Email Address</label>
-                    <input type="email" placeholder="Your email" disabled>
+                    <input type="email" placeholder="Email: " value = "{{ email }}" disabled>
 
                     <label>Phone Number</label>
                     <input type="text" placeholder="Your phone" disabled>
