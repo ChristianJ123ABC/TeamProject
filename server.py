@@ -42,7 +42,7 @@ import re
 
 
 
-
+#START: CODE COMPLETED BY CHRISTIAN
 #Used to access the Database / keep users logged in 
 app = Flask(__name__, template_folder='templates')
 app.config["SESSION_PERMANENT"] = True
@@ -283,3 +283,5 @@ def logout():
 #makes it so that it only runs the app when executed
 if __name__ == "__main__":
     app.run(debug=True) #updates in real-time + shows bugs / errors on CMD
+
+#END: CODE COMPLETED BY CHRISTIAN
