@@ -1,9 +1,9 @@
 const images = [
-    "images/delivery.jpg",
-    "images/making-order.jpg",
-    "images/packing-order.jpg",
-    "images/recycle-image.jpg",
-    "images/takeaway.jpg"
+    "static/delivery.jpg",
+    "static/making-order.jpg",
+    "static/packing-order.jpg",
+    "static/recycle-image.jpg",
+    "static/takeaway.jpg"
   ];
   
   let currentImage = 0;
