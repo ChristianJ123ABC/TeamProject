@@ -17,7 +17,7 @@
      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
        
-            <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
+            <a class="navbar-brand logo" href="{{ url_for('Food_owner') }}">Food Promotor Dashboard</a>
     
         
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -27,28 +27,27 @@
         
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Schedule_pickup') }}">Schedule Pickup</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Food_marketplace') }}">Food Marketplace</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Cprofile') }}">Profile</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Post_promotion') }}">Post Promotion</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Fprofile') }}">Profile</a></li>
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="{{url_for('Cpayment') }}">
+                        <a class="nav-link d-flex align-items-center" href="{{url_for('Fpayment') }}">
                         </a>
                     </li>
                 </ul>
     
              
                 <div class="d-flex align-items-center">
-                    <a href="{{url_for('Cpayment') }}" class="btn Payment">Payment</a>
+                    <a href="{{url_for('Fpayment') }}" class="btn Payment">Payment</a>
                     <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
                 </div>
             </div>
         </div>
     </nav>
-    <h1>Checkout</h1>
-    <p>Pay $5.00 for this product.</p>
+    <h1>Subscribe to Our Premium Plan</h1>
+    <p>Get full access for $20/month.</p>
     
-    <form action="/create-checkout-session-one-time" method="POST">
-        <button type="submit">Buy Now</button>
+    <form action="/create-checkout-session-subscription" method="POST">
+        <button type="submit">Subscribe Now</button>
     </form>
     
     <br>
