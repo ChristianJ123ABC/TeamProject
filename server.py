@@ -226,15 +226,6 @@ def login():
         
         return render_template("login.html")
         
-    
-@app.route('/basket')
-def basket():
-    return render_template("basket.html")
-
-@app.route('/recycle')
-def recycle():
-     return render_template("recycle.html")
-
 
 
 @app.route('/profile', methods=["GET", "POST"])
@@ -273,15 +264,24 @@ def driver():
 def promoter():
     return render_template("promoter.html")
 
+#END: CODE COMPLETED BY CHRISTIAN
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for("login"))
-    
-    
+  
 #makes it so that it only runs the app when executed
 if __name__ == "__main__":
     app.run(debug=True) #updates in real-time + shows bugs / errors on CMD
 
-#END: CODE COMPLETED BY CHRISTIAN

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        button { background-color: #6772e5; color: white; border: none; padding: 15px 30px; font-size: 18px; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #556cd6; }
+    </style>
+</head>
+<body>
+
+     <!-- nav bar-->
+     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+       
+            <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
+    
+        
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+    
+        
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Schedule_pickup') }}">Schedule Pickup</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Food_marketplace') }}">Food Marketplace</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Cprofile') }}">Profile</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{{url_for('Cpayment') }}">
+                        </a>
+                    </li>
+                </ul>
+    
+             
+                <div class="d-flex align-items-center">
+                    <a href="{{url_for('Cpayment') }}" class="btn Payment">Payment</a>
+                    <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <h1>Checkout</h1>
+    <p>Pay $5.00 for this product.</p>
+    
+    <form action="/create-checkout-session-one-time" method="POST">
+        <button type="submit">Buy Now</button>
+    </form>
+    
+    <br>
+
+</body>
+</html>
