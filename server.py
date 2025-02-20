@@ -90,8 +90,8 @@ def home():
             return redirect(url_for("customer"))
         elif(session["role"] == "driver"):
             return redirect(url_for("driver"))
-        elif(session["role"] == "food_owner"):
-            return redirect(url_for("promoter"))
+        elif(session["role"] == "Food_owner"):
+            return redirect(url_for("Food_owner"))
         
     else:
         return render_template("home.html")
@@ -111,9 +111,9 @@ def register():
             flash("You must log out to create another account")
             return redirect(url_for("driver"))
         
-        elif(session["role"] == "food_owner"):
+        elif(session["role"] == "Food_owner"):
             flash("You must log out to create another account")
-            return redirect(url_for("promoter"))
+            return redirect(url_for("Food_owner"))
         
     if request.method == "GET":
         return render_template("register.html")
@@ -175,9 +175,9 @@ def login():
             flash("You are already logged in")
             return redirect(url_for("driver"))
         
-        elif(session["role"] == "food_owner"):
+        elif(session["role"] == "Food_owner"):
             flash("You are already logged in")
-            return redirect(url_for("promoter"))
+            return redirect(url_for("Food_owner"))
         
     
         
@@ -221,7 +221,7 @@ def login():
             elif(session["role"] == "driver"):
                 return redirect(url_for("driver"))
             else:
-                return redirect(url_for("promoter"))
+                return redirect(url_for("Food_owner"))
 
         
         return render_template("login.html")
@@ -258,11 +258,11 @@ def customer():
 
 @app.route('/driver')
 def driver():
-    return render_template("employee.html")
+    return render_template("driver.html")
 
-@app.route('/promoter')
-def promoter():
-    return render_template("promoter.html")
+@app.route('/Food_owner')
+def Food_owner():
+    return render_template("Food_owner.html")
 
 #END: CODE COMPLETED BY CHRISTIAN
 
@@ -271,7 +271,99 @@ def promoter():
 
 
 
+#START: CODE COMPLETED BY PRAKASH
 
+@app.route('/Cprofile', methods=["GET", "POST"])
+def Cprofile():
+
+ #same method as register, used to grab the details from Database and insert them into the form textfields    
+    if request.method == "POST":
+        email = request.form["email"]
+        username = request.form["username"] 
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
+                            (username, email))
+        mysql.connection.commit()
+        cursor.close()
+
+    return render_template("Cprofile.html", username=session["username"], email=session["email"])
+
+@app.route('/Schedule_Pickup')
+def Schedule_pickup():
+    return render_template("Schedule_pickup.html")
+
+@app.route('/Food_marketplace')
+def Food_marketplace():
+    return render_template("Food_marketplace.html")
+
+# Customer payment Page - One-Time Payment
+@app.route('/Cpayment')
+def Cpayment():
+    return render_template("Cpayment.html")  # One-time payment page
+
+@app.route('/Dprofile', methods=["GET", "POST"])
+def Dprofile():
+
+ #same method as register, used to grab the details from Database and insert them into the form textfields    
+    if request.method == "POST":
+        email = request.form["email"]
+        username = request.form["username"] 
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
+                            (username, email))
+        mysql.connection.commit()
+        cursor.close()
+
+    return render_template("Dprofile.html", username=session["username"], email=session["email"])
+
+@app.route('/Pickup_request')
+def Pickup_request():
+    return render_template("Pickup_request.html")
+
+@app.route('/Earning_report')
+def Earning_report():
+    return render_template("Earning_report.html")
+
+@app.route('/Fprofile', methods=["GET", "POST"])
+def Fprofile():
+
+ #same method as register, used to grab the details from Database and insert them into the form textfields    
+    if request.method == "POST":
+        email = request.form["email"]
+        username = request.form["username"] 
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
+                            (username, email))
+        mysql.connection.commit()
+        cursor.close()
+
+    return render_template("Fprofile.html", username=session["username"], email=session["email"])
+
+@app.route('/Post_promotion')
+def Post_promotion():
+    return render_template("Post_promotion.html")
+
+# Subscription Page
+@app.route('/suscribe')
+def Fpayment():
+    return render_template("Fpayment.html") # Subscription payment page
+
+# Success Page
+@app.route("/success")
+def success():
+    return render_template("success.html")
+
+# Cancel Page
+@app.route("/cancel")
+def cancel():
+    return render_template("cancel.html", message="Your payment was unsuccessful. Please try again.")
+
+
+
+#END: CODE COMPLETED BY PRAKASH
 
 
 
