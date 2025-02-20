@@ -7,7 +7,7 @@
 
 #validation
 #https://www.geeksforgeeks.org/check-if-email-address-valid-or-not-in-python/
-#https://stackoverflow.com/questions/65915695/how-do-i-make-sql-python-find-if-a-username-is-already-in-the-database
+#https://stackoverflow.com/questions/65915695/how-do-i-make-sql-python-find-if-a-full_name-is-already-in-the-database
 #https://python-forum.io/thread-7016.html
 
 #connecting database
@@ -16,8 +16,8 @@
 
 #login issues
 #https://tedboy.github.io/flask/generated/werkzeug.check_password_hash.html 
-#https://stackoverflow.com/questions/46723767/how-to-get-current-user-when-implementing-python-flask-security - returning a username
-#https://stackoverflow.com/questions/59380641/how-to-display-username-in-multiple-pages-using-flask
+#https://stackoverflow.com/questions/46723767/how-to-get-current-user-when-implementing-python-flask-security - returning a full_name
+#https://stackoverflow.com/questions/59380641/how-to-display-full_name-in-multiple-pages-using-flask
 
 #Session permanence
 #https://stackoverflow.com/questions/37227780/flask-session-persisting-after-close-browser
@@ -73,12 +73,11 @@ def email_exists(email):
     cursor.close()
     return user
 
-def username_exists(username):
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
-    user = cursor.fetchone()
-    cursor.close()
-    return user
+
+def phoneNumRange(phone_number):
+    return re.match(r"^\d{10}$",phone_number)
+
+
     
 
 
@@ -90,8 +89,8 @@ def home():
             return redirect(url_for("customer"))
         elif(session["role"] == "driver"):
             return redirect(url_for("driver"))
-        elif(session["role"] == "Food_owner"):
-            return redirect(url_for("Food_owner"))
+        elif(session["role"] == "food_owner"):
+            return redirect(url_for("foodOwner"))
         
     else:
         return render_template("home.html")
@@ -111,19 +110,21 @@ def register():
             flash("You must log out to create another account")
             return redirect(url_for("driver"))
         
-        elif(session["role"] == "Food_owner"):
+        elif(session["role"] == "food_owner"):
             flash("You must log out to create another account")
-            return redirect(url_for("Food_owner"))
+            return redirect(url_for("foodOwner"))
         
     if request.method == "GET":
         return render_template("register.html")
     
     else:
         #grabs the information from the form textfield and makes it into variables
-        username = request.form["username"]
+        full_name = request.form["full_name"]
         password = request.form["password"]
         email = request.form["email"]
         role = request.form["role"]
+        phone_number = request.form["phone_number"]
+        address = request.form["address"]
 
         #used to encrypt password for security
         hashPass = generate_password_hash(password)
@@ -138,24 +139,41 @@ def register():
             flash("Email is already registered")
             return redirect(url_for("register"))
         
-        elif username_exists(username):
-            flash("Username already exists")
+        elif not phoneNumRange(phone_number):
+            flash("Phone number out of range")
             return redirect(url_for("register"))
         
-       
 
-
-        
-        
         
         #inserts the data into the database
         
         cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO Users (username, email, password, role) VALUES (%s, %s, %s, %s)", 
-                       (username, email, hashPass, role))
+        cursor.execute("INSERT INTO Users (full_name, email, password, role, phone_number, address) VALUES (%s, %s, %s, %s, %s, %s)", 
+                       (full_name, email, hashPass, role, phone_number, address))
         mysql.connection.commit()
+      
+        
+        #Depending on the role, specific data will be placed into that role
+        if(role == "customer"):
+            cursor.execute("INSERT INTO Customers (full_name, phone_number,address) VALUES (%s, %s, %s)", 
+                       (full_name, phone_number, address))
+            mysql.connection.commit()
+
+        elif(role == "driver"):
+            cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)", 
+                       (full_name, phone_number))
+            mysql.connection.commit()
+
+        elif(role == "food_owner"):
+            cursor.execute("INSERT INTO FoodOwners (full_name, phone_number) VALUES (%s, %s)", 
+                       (full_name, phone_number))
+            mysql.connection.commit()
+        
         cursor.close()
+
         flash("Account created successfully!")
+
+     
 
         
         return render_template("register.html")
@@ -175,9 +193,9 @@ def login():
             flash("You are already logged in")
             return redirect(url_for("driver"))
         
-        elif(session["role"] == "Food_owner"):
+        elif(session["role"] == "food_owner"):
             flash("You are already logged in")
-            return redirect(url_for("Food_owner"))
+            return redirect(url_for("foodOwner"))
         
     
         
@@ -212,44 +230,25 @@ def login():
         else:
             #keeps the user logged in, even when browser is closed
             session["user_id"] = user["user_id"]
-            session["username"] = user["username"]
+            session["full_name"] = user["full_name"]
             session["email"] = user["email"]
             session["role"] = user["role"]
+            session["phone_number"] = user["phone_number"]
+            session["address"] = user["address"]
             session.permanent = True
             if(session["role"] == "customer"):
                 return redirect(url_for("customer"))
             elif(session["role"] == "driver"):
                 return redirect(url_for("driver"))
             else:
-                return redirect(url_for("Food_owner"))
+                return redirect(url_for("foodOwner"))
 
         
         return render_template("login.html")
         
 
 
-@app.route('/profile', methods=["GET", "POST"])
-def profile():
-    
-    #If the user is not logged in, display this
-    if "user_id" not in session:
-        flash("You must have created an account to view the profile page")
-        return render_template('home.html')
 
-    
-
-    #same method as register, used to grab the details from Database and insert them into the form textfields    
-    if request.method == "POST":
-        email = request.form["email"]
-        username = request.form["username"] 
-
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
-                            (username, email))
-        mysql.connection.commit()
-        cursor.close()
-
-    return render_template("profile.html", username=session["username"], email=session["email"])
 
 #pages / dashboards for each role
 @app.route('/customer')
@@ -275,19 +274,7 @@ def foodOwner():
 
 @app.route('/Cprofile', methods=["GET", "POST"])
 def Cprofile():
-
- #same method as register, used to grab the details from Database and insert them into the form textfields    
-    if request.method == "POST":
-        email = request.form["email"]
-        username = request.form["username"] 
-
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
-                            (username, email))
-        mysql.connection.commit()
-        cursor.close()
-
-    return render_template("Cprofile.html", username=session["username"], email=session["email"])
+    return render_template("Cprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
 @app.route('/schedulePickup')
 def schedulePickup():
@@ -304,19 +291,7 @@ def Cpayment():
 
 @app.route('/Dprofile', methods=["GET", "POST"])
 def Dprofile():
-
- #same method as register, used to grab the details from Database and insert them into the form textfields    
-    if request.method == "POST":
-        email = request.form["email"]
-        username = request.form["username"] 
-
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
-                            (username, email))
-        mysql.connection.commit()
-        cursor.close()
-
-    return render_template("Dprofile.html", username=session["username"], email=session["email"])
+    return render_template("Dprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
 @app.route('/pickupRequest')
 def pickupRequest():
@@ -328,19 +303,7 @@ def earningReport():
 
 @app.route('/Fprofile', methods=["GET", "POST"])
 def Fprofile():
-
- #same method as register, used to grab the details from Database and insert them into the form textfields    
-    if request.method == "POST":
-        email = request.form["email"]
-        username = request.form["username"] 
-
-        cursor = mysql.connection.cursor()
-        cursor.execute("INSERT INTO Users (username, email) VALUES (%s, %s,)", 
-                            (username, email))
-        mysql.connection.commit()
-        cursor.close()
-
-    return render_template("Fprofile.html", username=session["username"], email=session["email"])
+    return render_template("Fprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
 @app.route('/postPromotion')
 def postPromotion():

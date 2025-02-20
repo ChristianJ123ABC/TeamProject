@@ -3,6 +3,10 @@
 <!-- #https://stackoverflow.com/questions/12277933/send-data-from-a-textbox-into-flask -->
 <!-- #https://stackoverflow.com/questions/61625715/how-to-write-input-from-input-box-from-a-flask-website-into-a-csv-or-txt-file -->
 
+<!-- References -->
+<!-- Forms-->
+<!-- https://www.w3schools.com/html/html_form_input_types.asp -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,18 +64,18 @@
                 <img src="../static/profile.jpg" alt="Profile">
             </div>
             <div class="profile-details">
-                <form action = "{{ url_for('profile') }}" method="POST">
-                    <label>Username</label>
-                    <input type="text" placeholder="Username: " value = "{{ username }}" disabled>
+                <form action = "{{ url_for('Cprofile') }}" method="POST">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Full Name: " value = "{{ full_name }}" disabled>
 
                     <label>Email Address</label>
                     <input type="email" placeholder="Email: " value = "{{ email }}" disabled>
 
                     <label>Phone Number</label>
-                    <input type="text" placeholder="Your phone" disabled>
+                    <input type="text" placeholder="Phone Number" value = "{{ phone_number }}" disabled>
 
                     <label>Address</label>
-                    <textarea placeholder="Your address" disabled></textarea>
+                    <input type="text" placeholder="Address" value = "{{ address }}" disabled>
 
                     <button class="edit-btn">Edit Profile</button>
                 </form>

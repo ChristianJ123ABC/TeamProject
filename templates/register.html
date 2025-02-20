@@ -1,3 +1,6 @@
+<!-- References -->
+<!-- Forms-->
+<!-- https://www.w3schools.com/html/html_form_input_types.asp -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -44,9 +47,11 @@
                 {%endwith%}
             <h1>Register Page</h1>
                 <form method = "POST" action="{{ url_for('register') }}">
-                    <input type = "text" name = "username" placeholder = "Username" required><br>
+                    <input type = "text" name = "full_name" placeholder = "Full Name" required><br>
                     <input type = "password" name = "password" placeholder = "Password" required><br>
                     <input type = "email" name = "email" placeholder = "Email" required><br>
+                    <input type = "tel" name = "phone_number" placeholder = "Phone Number " pattern = "[0-9]{10}" required><br>
+                    <input type = "text" name = "address" placeholder = "Address" required><br>
                     <select name = "role">
                         <option value = "driver">Employee (Delivery Driver)</option>
                         <option value = "food_owner">Food Owner / Promoter</option>
