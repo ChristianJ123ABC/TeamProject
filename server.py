@@ -27,6 +27,10 @@
 #https://stackoverflow.com/questions/12277933/send-data-from-a-textbox-into-flask
 #https://stackoverflow.com/questions/61625715/how-to-write-input-from-input-box-from-a-flask-website-into-a-csv-or-txt-file
 
+#Updating profile
+#https://www.youtube.com/watch?v=1G2Uk_RAZqE
+#https://www.youtube.com/watch?v=o6YjyOt2Zhc&t=135s
+
 #Imports for functionality of the server / backend
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_mysqldb import MySQL
@@ -328,6 +332,72 @@ def cancel():
 
 #END: CODE COMPLETED BY PRAKASH
 
+#START: CODE COMPLETED BY CHRISTIAN
+@app.route("/updateCProfile", methods=["GET", "POST"])
+def updateCProfile():
+    if request.method == "GET":
+        return render_template("updateCProfile.html")
+    else:
+        email = request.form["email"]
+        full_name = request.form["full_name"]
+        phone_number = request.form["phone_number"]
+        address = request.form["address"]
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
+                       (email, full_name, phone_number, address, session["user_id"]))
+        mysql.connection.commit()
+        cursor.close()
+
+        #logs the user out
+        session.clear()
+        flash("Profile Updated! Log back in to see updates")
+        return redirect(url_for("login"))
+
+@app.route("/updateDProfile", methods=["GET", "POST"])
+def updateDProfile():
+    if request.method == "GET":
+        return render_template("updateDProfile.html")
+    else:
+        email = request.form["email"]
+        full_name = request.form["full_name"]
+        phone_number = request.form["phone_number"]
+        address = request.form["address"]
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
+                       (email, full_name, phone_number, address, session["user_id"]))
+        mysql.connection.commit()
+        cursor.close()
+
+        #logs the user out
+        session.clear()
+        flash("Profile Updated! Log back in to see updates")
+        return redirect(url_for("login"))
+
+@app.route("/updateFProfile", methods=["GET", "POST"])
+def updateFProfile():
+    if request.method == "GET":
+        return render_template("updateFProfile.html")
+    else:
+        email = request.form["email"]
+        full_name = request.form["full_name"]
+        phone_number = request.form["phone_number"]
+        address = request.form["address"]
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
+                       (email, full_name, phone_number, address, session["user_id"]))
+        mysql.connection.commit()
+        cursor.close()
+
+        #logs the user out
+        session.clear()
+        flash("Profile Updated! Log back in to see updates")
+        return redirect(url_for("login"))
+        
+         
+        
 
 
 
@@ -340,3 +410,4 @@ def logout():
 if __name__ == "__main__":
     app.run(debug=True) #updates in real-time + shows bugs / errors on CMD
 
+#END: CODE COMPLETED BY CHRISTIAN
