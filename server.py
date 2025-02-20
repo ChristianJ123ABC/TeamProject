@@ -31,15 +31,36 @@
 #https://www.youtube.com/watch?v=1G2Uk_RAZqE
 #https://www.youtube.com/watch?v=o6YjyOt2Zhc&t=135s
 
+
+#connecting Stripe to web app
+#https://www.youtube.com/watch?v=jMX74n-TwF4
+#https://www.youtube.com/watch?v=6plVs_ytIH8
+#https://stripe.com/
+#https://www.youtube.com/watch?v=6O8LTwVfTVs
+#https://www.youtube.com/watch?v=uZgRbnIsgrA
+#https://stripe.com/docs
+#https://github.com/stripe/stripe-python
+
 #Imports for functionality of the server / backend
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, redirect, request, render_template
 import re
+import stripe
 
 
+#Start -code by prakash
 
+app = Flask(__name__, static_url_path="", static_folder="public")
 
+# Stripe API Keys 
+stripe.api_key = "sk_test_51QtHxkE9I53MxGEG7q4d6GghW7i88Wdb1ddzxsahEuswMEzNK1qW2EO3RWguhlwcEWOzZAyXl8SwsKSnwzP0Gln700uKNfydfi"
+
+# Your website domain
+YOUR_DOMAIN = "http://localhost:5000"
+
+#Start -code by prakash
 
 
 
@@ -293,6 +314,35 @@ def foodMarketplace():
 def Cpayment():
     return render_template("Cpayment.html")  # One-time payment page
 
+
+# Create Checkout Session for One-Time Payment
+@app.route("/create-checkout-session-one-time", methods=["POST"])
+def create_checkout_session_one_time():
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {
+                            "name": "One-Time Purchase",
+                        },
+                        "unit_amount": 500,  # $5.00
+                    },
+                    "quantity": 1,
+                }
+            ],
+            mode="payment",
+            success_url=f"{YOUR_DOMAIN}/success",
+            cancel_url=f"{YOUR_DOMAIN}/cancel"
+        )
+        return redirect(checkout_session.url, code=303)
+    except Exception as e:
+        return str(e), 400
+
+
+
 @app.route('/Dprofile', methods=["GET", "POST"])
 def Dprofile():
     return render_template("Dprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
@@ -317,6 +367,28 @@ def postPromotion():
 @app.route('/subscribe')
 def Fpayment():
     return render_template("Fpayment.html") # Subscription payment page
+
+
+# Create Checkout Session for Subscription
+@app.route("/create-checkout-session-subscription", methods=["POST"])
+def create_checkout_session_subscription():
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price": "price_1QtIH1E9I53MxGEGrg7Sfvx8",  # recurring price ID from Stripe
+                    "quantity": 1
+                }
+            ],
+            mode="subscription",
+            success_url=f"{YOUR_DOMAIN}/success",
+            cancel_url=f"{YOUR_DOMAIN}/cancel"
+        )
+        return redirect(checkout_session.url, code=303)
+    except Exception as e:
+        return str(e), 400
+
 
 # Success Page
 @app.route("/success")
