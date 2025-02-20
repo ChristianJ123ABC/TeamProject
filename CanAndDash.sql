@@ -1,3 +1,5 @@
+<!--Start -code by prakash-->
+
 /* creade Can&Dash database*/
 -- Create Database
 CREATE DATABASE CanAndDash;
@@ -101,3 +103,6 @@ CREATE TABLE Payments (
     status ENUM('success', 'failed') DEFAULT 'success',
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
+
+
+<!--Start -code by prakash-->
