@@ -260,9 +260,9 @@ def customer():
 def driver():
     return render_template("driver.html")
 
-@app.route('/Food_owner')
-def Food_owner():
-    return render_template("Food_owner.html")
+@app.route('/foodOwner')
+def foodOwner():
+    return render_template("foodOwner.html")
 
 #END: CODE COMPLETED BY CHRISTIAN
 
@@ -289,13 +289,13 @@ def Cprofile():
 
     return render_template("Cprofile.html", username=session["username"], email=session["email"])
 
-@app.route('/Schedule_Pickup')
-def Schedule_pickup():
-    return render_template("Schedule_pickup.html")
+@app.route('/schedulePickup')
+def schedulePickup():
+    return render_template("schedulePickup.html")
 
-@app.route('/Food_marketplace')
-def Food_marketplace():
-    return render_template("Food_marketplace.html")
+@app.route('/foodMarketplace')
+def foodMarketplace():
+    return render_template("foodMarketplace.html")
 
 # Customer payment Page - One-Time Payment
 @app.route('/Cpayment')
@@ -318,13 +318,13 @@ def Dprofile():
 
     return render_template("Dprofile.html", username=session["username"], email=session["email"])
 
-@app.route('/Pickup_request')
-def Pickup_request():
-    return render_template("Pickup_request.html")
+@app.route('/pickupRequest')
+def pickupRequest():
+    return render_template("pickupRequest.html")
 
-@app.route('/Earning_report')
-def Earning_report():
-    return render_template("Earning_report.html")
+@app.route('/earningReport')
+def earningReport():
+    return render_template("earningReport.html")
 
 @app.route('/Fprofile', methods=["GET", "POST"])
 def Fprofile():
@@ -342,12 +342,12 @@ def Fprofile():
 
     return render_template("Fprofile.html", username=session["username"], email=session["email"])
 
-@app.route('/Post_promotion')
-def Post_promotion():
-    return render_template("Post_promotion.html")
+@app.route('/postPromotion')
+def postPromotion():
+    return render_template("postPromotion.html")
 
 # Subscription Page
-@app.route('/suscribe')
+@app.route('/subscribe')
 def Fpayment():
     return render_template("Fpayment.html") # Subscription payment page
 

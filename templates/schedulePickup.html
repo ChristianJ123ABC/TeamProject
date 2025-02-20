@@ -13,14 +13,14 @@
  
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
              <link rel="stylesheet" href="../static/style.css">
-            <title> Pickup Request</title>
+            <title> Scheduled Pickup </title>
         </head>
         <body>
             <!-- nav bar-->
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                 <div class="container">
                
-                    <a class="navbar-brand logo" href="{{ url_for('driver') }}">Driver Dashboard</a>
+                    <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
             
                 
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -30,20 +30,24 @@
                 
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav ms-auto">
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Pickup_request') }}">Pickup Request</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Earning_report') }}">Earning Report</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Dprofile') }}">Profile</a></li>
-                            
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('schedulePickup') }}">Schedule Pickup</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('foodMarketplace') }}">Food Marketplace</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Cprofile') }}">Profile</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center" href="{{url_for('Cpayment') }}">
+                                </a>
+                            </li>
                         </ul>
             
                      
                         <div class="d-flex align-items-center">
+                            <a href="{{url_for('Cpayment') }}" class="btn Payment">Basket</a>
                             <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
                         </div>
                     </div>
                 </div>
             </nav>
-            <h1>Pickup Request Page</h1>
+            <h1>Pickup  Page</h1>
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>        
         </body>
