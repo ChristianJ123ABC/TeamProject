@@ -16,3 +16,5 @@ const images = [
   setInterval(changeImage, 4000); // Change image every 4 seconds
   changeImage(); 
   
+
+  
