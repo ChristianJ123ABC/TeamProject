@@ -415,6 +415,10 @@ def updateCProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
+        if email_exists(email):
+            flash("Email is already registered, please try again")
+            return redirect(url_for("updateCProfile"))
+        
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
                        (email, full_name, phone_number, address, session["user_id"]))
@@ -435,6 +439,10 @@ def updateDProfile():
         full_name = request.form["full_name"]
         phone_number = request.form["phone_number"]
         address = request.form["address"]
+
+        if email_exists(email):
+            flash("Email is already registered")
+            return redirect(url_for("updateDProfile"))
 
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
@@ -457,6 +465,10 @@ def updateFProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
+        if email_exists(email):
+            flash("Email is already registered")
+            return redirect(url_for("updateFProfile"))
+        
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
                        (email, full_name, phone_number, address, session["user_id"]))
