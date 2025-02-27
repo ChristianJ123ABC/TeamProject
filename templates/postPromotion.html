@@ -9,6 +9,9 @@
 <!-- https://stackoverflow.com/questions/5865408/javascript-css-show-and-hide-form-elements -->
 <!-- https://stackoverflow.com/questions/10671174/changing-button-text-onclick -->
 <!-- https://stackoverflow.com/questions/4526273/what-does-enctype-multipart-form-data-mean-->
+<!-- https://www.youtube.com/watch?v=2De9Lu9tReg  Foundation -->
+<!-- https://www.youtube.com/watch?v=YLptAhf3wwM&t=963s Deleting Images -->
+<!-- https://www.youtube.com/watch?v=WX-ZZvUg2Kw      help with JINJA -->
  
 <!DOCTYPE html>
 <html>
@@ -54,9 +57,18 @@
                     </div>
                 </div>
             </nav>
+            <!-- used to display flash messages when called-->
+            {% with messages = get_flashed_messages()%}
+             {% if messages%}
+                {% for message in messages%}
+                <h2>{{message}}</h2>
+                 {%endfor%}
+                {%endif%}
+                {%endwith%}
             <h1>Food Promotion Page</h1>
             
-            <form id = "upload" action="/upload" method="POST" class = "register-form" enctype="multipart/form-data" style="display: none";>
+            <!-- Form used to add images to the slideshow -->
+            <form id = "upload" action="/postPromotion" method="POST" class = "register-form" enctype="multipart/form-data" style="display: none";> <!-- hidden at first until add image button is pressed-->
                 <input type = "text" name = "caption" placeholder = "Enter caption">
                 <input type = "file" name = "image"  placeholder = "Add Image">
                 <button type = "submit">Upload Promotion</button>
@@ -64,6 +76,36 @@
             <br>
             <button class="btn btn-outline-success" id = "formButton" onclick = "hideForm()">Add Image</button>
             
+            
+            <!-- Interactive slideshow that checks each image in Promotion and displays them-->
+            <div id="promotions" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <!-- Jinja Template to return each image in Promotions Table-->
+                    {% for promotion in promotions %}
+                        <div class="carousel-item active">
+                            <img src="{{ url_for('static', filename = promotion.image.replace('\\', '/')) }}" class="d-block w-100" alt="Promotion Image"> <!-- fixes bug that makes the file path use \\ instead of /-->
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>{{ promotion.caption }}</h5>
+                                <a href="{{ url_for('deleteImage', id=promotion.id)}}">Delete </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#promotionCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#promotionCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+
+           
+       
+    
+            
+            <!-- function used to hide the form and reappear it -->
             <script>
                 function hideForm(){
                     var form = document.getElementById("upload")
