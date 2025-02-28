@@ -41,13 +41,21 @@
 #https://stripe.com/docs
 #https://github.com/stripe/stripe-python
 
+#Uploading / Deleting images
+#https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+#https://www.youtube.com/watch?v=2De9Lu9tReg
+#https://www.youtube.com/watch?v=YLptAhf3wwM&t=963s
+#https://www.geeksforgeeks.org/python-os-remove-method/
+
 #Imports for functionality of the server / backend
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, redirect, request, render_template
+
 import re
 import stripe
+import os
 
 
 #Start -code by prakash
@@ -78,10 +86,15 @@ app.config['MYSQL_DB'] = 'railway'
 app.config['MYSQL_PORT'] = 13847
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 app.secret_key = "test"
-
-
-
 mysql = MySQL(app)
+
+
+#Uploading files
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg,'}
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
+
+
 
 
 
@@ -359,9 +372,6 @@ def earningReport():
 def Fprofile():
     return render_template("Fprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
-@app.route('/postPromotion')
-def postPromotion():
-    return render_template("postPromotion.html")
 
 # Subscription Page
 @app.route('/subscribe')
@@ -415,6 +425,10 @@ def updateCProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
+        if email_exists(email):
+            flash("Email is already registered, please try again")
+            return redirect(url_for("updateCProfile"))
+        
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
                        (email, full_name, phone_number, address, session["user_id"]))
@@ -435,6 +449,10 @@ def updateDProfile():
         full_name = request.form["full_name"]
         phone_number = request.form["phone_number"]
         address = request.form["address"]
+
+        if email_exists(email):
+            flash("Email is already registered")
+            return redirect(url_for("updateDProfile"))
 
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
@@ -457,6 +475,10 @@ def updateFProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
+        if email_exists(email):
+            flash("Email is already registered")
+            return redirect(url_for("updateFProfile"))
+        
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Users SET email = %s, full_name = %s, phone_number = %s, address = %s WHERE user_id = %s",
                        (email, full_name, phone_number, address, session["user_id"]))
@@ -467,10 +489,71 @@ def updateFProfile():
         session.clear()
         flash("Profile Updated! Log back in to see updates")
         return redirect(url_for("login"))
+    
+
+@app.route('/postPromotion', methods =["GET", "POST"])
+def postPromotion():
+
+    #Used to create the Jinja template / display each image in promotion page
+    if request.method == "GET":
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT id, image, caption FROM Promotions")
+        promotions = cursor.fetchall()
+        return render_template("postPromotion.html", promotions=promotions)
+    
+    else:
+        #Validation 
+        if request.method == 'POST':
+            image = request.files['image']
+            if image.filename == '':
+                flash('No selected file')
+                return redirect(request.url)
+            
+            if image:
+                #Creates a filepath of uploads\x.jpg 
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
+                image.save(filepath)
+                relative_filepath = os.path.join('uploads', image.filename)
+
+                # Insert image into database with a caption
+                cursor = mysql.connection.cursor()
+                caption = request.form.get('caption')
+                cursor.execute("INSERT INTO Promotions (image, caption) VALUES (%s, %s)", (relative_filepath, caption))
+                mysql.connection.commit()
+                cursor.close()
+                
+                flash('Image uploaded successfully')
+                return redirect(url_for('postPromotion'))
+
+
+
+#Used to remove a specific image from the Uploads folder, from the website and from the database
+@app.route('/deleteImage/<int:id>')
+def deleteImage(id):
+    #Used to get root directory of every computer, so it can access the TeamProject folder
+    root = os.path.dirname(os.path.abspath(__file__))
+        
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT image FROM Promotions WHERE id = %s", (id,))
+    imageFile = cursor.fetchone()
+    imageFileName = imageFile['image'] #Grabs the image column from Promotions table
+    
+
+    imagePath = os.path.join(root,'static', imageFileName)
+    os.remove(imagePath)
+
+    cursor.execute("DELETE FROM Promotions WHERE id = %s", (id,))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect(url_for("postPromotion"))
+
+        
         
          
         
 
+    
 
 
 @app.route('/logout')
