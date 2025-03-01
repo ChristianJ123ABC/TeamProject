@@ -507,18 +507,18 @@ def postPromotion():
             image = request.files['image']
             if image.filename == '':
                 flash('No selected file')
-                return redirect(request.url)
+                return redirect(url_for('postPromotion')) 
             
             if image:
                 #Creates a filepath of uploads\x.jpg 
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
                 image.save(filepath)
-                relative_filepath = os.path.join('uploads', image.filename)
+                uploadFilePath= os.path.join('uploads', image.filename)
 
                 # Insert image into database with a caption
                 cursor = mysql.connection.cursor()
                 caption = request.form.get('caption')
-                cursor.execute("INSERT INTO Promotions (image, caption) VALUES (%s, %s)", (relative_filepath, caption))
+                cursor.execute("INSERT INTO Promotions (image, caption) VALUES (%s, %s)", (uploadFilePath, caption))
                 mysql.connection.commit()
                 cursor.close()
                 
