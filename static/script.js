@@ -17,4 +17,20 @@ const images = [
   changeImage(); 
   
 
-  
+        function searchRestaurants() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let restaurants = document.querySelectorAll(".restaurant-card");
+
+            restaurants.forEach(card => {
+                let title = card.querySelector(".card-title").innerText.toLowerCase();
+                card.style.display = title.includes(input) ? "block" : "none";
+            });
+        }
+ 
+        
+
+        function claimOffer() {
+          alert("✅ You have claimed this offer! Enjoy your discount.");
+      }
+
+     

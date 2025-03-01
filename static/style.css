@@ -505,3 +505,60 @@
 .logout {
     opacity: 0.8;
 }
+
+.promo-banner {
+    text-align: center;
+    background: #f39c12;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.promo-btn {
+    background: white;
+    color: #f39c12;
+    padding: 10px 20px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.discount {
+    font-weight: bold;
+    color: red;
+}
+
+.claim-offer {
+    background: #e67e22;
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.more-deals {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.explore-btn {
+    background: #2c3e50;
+    color: white;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+#claim-message {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: green;
+    margin-top: 15px;
+    display: none; /
+}

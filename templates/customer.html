@@ -56,9 +56,59 @@
                  {%endfor%}
                 {%endif%}
                 {%endwith%}
-            <h1>Customer Page</h1>
-                <!-- END: CODE FINISHED BY CHRISTIAN -->
+
+                
+                 <!-- END: CODE FINISHED BY CHRISTIAN -->
+                
             
+   
+<section class="promo-banner">
+    <h1>🔥 50% Off Your First Order! </h1>
+    <p>Order from these top-rated restaurants and enjoy exclusive savings.</p>
+    <a href="{{ url_for('foodMarketplace') }}" class="btn promo-btn">Explore More Deals</a>
+</section>
+
+
+<div class="search-bar">
+    <input type="text" placeholder="Search for a restaurant...">
+    <button>Search</button>
+</div>
+
+
+<section class="featured">
+    <h2>Exclusive Offers for You</h2>
+    <div class="restaurant-grid">
+        <div class="restaurant-card">
+            <img src="../static/mexican.jpg" alt="Mexican Cuisine">
+            <h3>El Taco Loco</h3>
+            <p><span class="discount">🌮 50% Off Today!</span></p>
+            <button class="claim-offer" onclick="claimOffer()">Claim Offer</button>
+        </div>
+        <div class="restaurant-card">
+            <img src="../static/indian.jpg" alt="Indian Cuisine">
+            <h3>Curry House</h3>
+            <p><span class="discount">🎉 Buy 1 Get 1 Free</span></p>
+            <button class="claim-offer" onclick="claimOffer()">Claim Offer</button>
+        </div>
+        <div class="restaurant-card">
+            <img src="../static/turkish.jpg" alt="Turkish Cuisine">
+            <h3>Istanbul Grill</h3>
+            <p><span class="discount">🌯 20% Off for New Customers</span></p>
+            <button class="claim-offer" onclick="claimOffer()">Claim Offer</button>
+        </div>
+    </div>
+</section>
+
+
+<div class="more-deals">
+    <a href="{{ url_for('foodMarketplace') }}" class="btn explore-btn">Browse All Deals →</a>
+</div>
+
+
+<p id="claim-message"></p>
+
+
+            <script src="../static/script.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>        
         </body>
 </html>
