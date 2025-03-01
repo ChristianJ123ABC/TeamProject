@@ -80,26 +80,26 @@
             <!-- Interactive slideshow that checks each image in Promotion and displays them-->
             <div id="promotions" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                    <!-- Jinja Template to return each image in Promotions Table-->
                     {% for promotion in promotions %}
-                        <div class="carousel-item active">
-                            <img src="{{ url_for('static', filename = promotion.image.replace('\\', '/')) }}" class="d-block w-100" alt="Promotion Image"> <!-- fixes bug that makes the file path use \\ instead of /-->
+                        <div class="carousel-item {% if loop.first %}active{% endif %}"> <!-- used to loop through-->
+                            <img src="{{ url_for('static', filename = promotion.image.replace('\\', '/')) }}" class="d-block w-100" alt="Promotion Image">
                             <div class="carousel-caption d-none d-md-block">
                                 <h5>{{ promotion.caption }}</h5>
-                                <a href="{{ url_for('deleteImage', id=promotion.id)}}">Delete </a>
+                                <a href="{{ url_for('deleteImage', id=promotion.id)}}">Delete</a>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#promotionCarousel" data-bs-slide="prev">
+                <button class="carousel-control-prev" type="button" data-bs-target="#promotions" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#promotionCarousel" data-bs-slide="next">
+                <button class="carousel-control-next" type="button" data-bs-target="#promotions" data-bs-slide="next">
                     <span class="carousel-control-next-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
 
            
        
