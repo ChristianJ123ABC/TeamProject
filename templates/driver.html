@@ -5,56 +5,133 @@
  
 <!DOCTYPE html>
 <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    
- 
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-             <link rel="stylesheet" href="../static/style.css">
-            <title> Driver Page </title>
-        </head>
-        <body>
-            <!-- nav bar-->
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div class="container">
-               
-                    <a class="navbar-brand logo" href="{{ url_for('driver') }}">Driver Dashboard</a>
-            
-                
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-            
-                
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('pickupRequest') }}">Pickup Request</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('earningReport') }}">Earning Report</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Dprofile') }}">Profile</a></li>
-                                                
-                        </ul>
-            
-                     
-                        <div class="d-flex align-items-center">
-                            <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
-                        </div>
-                    </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
+    <title>Driver Dashboard</title>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand logo" href="{{ url_for('driver') }}">Driver Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('pickupRequest') }}">Pickup Request</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('earningReport') }}">Earning Report</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('Dprofile') }}">Profile</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger me-2">Log Out</a>
                 </div>
-            </nav>
-            <!-- START: CODE FINISHED BY CHRISTIAN -->
-            <!-- used to display flash messages when called-->
-            {% with messages = get_flashed_messages()%}
-             {% if messages%}
-                {% for message in messages%}
-                <h2>{{message}}</h2>
-                 {%endfor%}
-                {%endif%}
-                {%endwith%}
-            <h1>Employer Page</h1>
-                <!-- END: CODE FINISHED BY CHRISTIAN -->
-            
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>        
-        </body>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="container mt-4">
+        <h1 class="text-center">Driver Dashboard</h1>
+
+        <!-- Profile Overview -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Profile Overview</h5>
+                <p><strong>Name:</strong> {{ driver_name }}</p>
+                <p><strong>Vehicle:</strong> {{ driver_vehicle }}</p>
+            </div>
+        </div>
+
+        <!-- Current Delivery -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Current Delivery</h5>
+                <p>Status: <strong>{{ delivery_status }}</strong></p>
+                <p>Destination: {{ delivery_destination }}</p>
+                <p>ETA: {{ delivery_eta }}</p>
+                <button class="btn btn-success">Mark Delivery Complete</button>
+            </div>
+        </div>
+
+        <!-- Upcoming Deliveries -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Upcoming Deliveries</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pickup Location</th>
+                            <th>Drop-off Location</th>
+                            <th>Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for delivery in upcoming_deliveries %}
+                        <tr>
+                            <td>{{ delivery.pickup }}</td>
+                            <td>{{ delivery.dropoff }}</td>
+                            <td>{{ delivery.time }}</td>
+                            <td><button class="btn btn-primary">View</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Earnings Summary -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Earnings Summary</h5>
+                <p>Today's Earnings: <strong>${{ earnings_today }}</strong></p>
+                <p>Weekly Earnings: <strong>${{ earnings_week }}</strong></p>
+                <p>Total Earnings: <strong>${{ earnings_total }}</strong></p>
+            </div>
+        </div>
+                <!-- Past Deliveries -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Past Deliveries</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Pickup Location</th>
+                            <th>Drop-off Location</th>
+                            <th>Delivery Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for past_delivery in past_deliveries %}
+                        <tr>
+                            <td>{{ past_delivery.pickup }}</td>
+                            <td>{{ past_delivery.dropoff }}</td>
+                            <td>{{ past_delivery.date }}</td>
+                            <td><span class="badge bg-success">Completed</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
