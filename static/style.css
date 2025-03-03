@@ -562,3 +562,110 @@
     margin-top: 15px;
     display: none; /
 }
+
+/*
+ START: COMPLETED BY CHRISTIAN
+*/
+/*
+SOURCES:
+https://www.youtube.com/watch?v=McPdzhLRzCg&t=322s
+
+*/
+
+/* centre the slideshow */
+#promotions{
+    width: 800px;
+    margin: auto;
+    aspect-ratio: 16/9;
+    
+    
+    
+}
+
+/*Styling for the slideshow
+
+/* make every image the same size and give them a border */
+#promotions .carousel-item img {
+    height: 600px; 
+    object-fit: cover; 
+    border: 7px solid #2c3e50;;
+    
+}
+
+/* adds slight background to caption */
+.carousel-caption{
+    background: rgba(0, 0, 0, 0.5);    
+}
+
+.carousel-caption h5{
+    font-weight: bold;
+    font-size: 25px;
+}
+
+.carousel-caption a{
+    color: red;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#advertisement h1{
+    text-align: center;
+    font-weight: bold;
+    color: #e67e22;
+}
+
+
+/* Styling for the form */
+h1, .upload h3{
+    text-align: center;
+    font-weight: bold;
+    color: #e67e22;
+}
+
+.upload{
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+}
+
+.upload input{
+    width: 400px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    
+}
+
+
+
+
+
+
+.formButton, .upload button  {
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    color: #2c3e50;
+    width: 400px;
+    position: relative;  
+    text-align: center; 
+}
+
+/* used to center the Add Promotion button */
+.formButton {
+    display: block;  
+    margin: 20px auto;
+}
+
+
+
+
+
+
+
+/*
+END: COMPLETED BY CHRISTIAN
+*/

@@ -24,6 +24,7 @@
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
              <link rel="stylesheet" href="../static/style.css">
             <title> Food Marketplace </title>
+
         </head>
         <body>
 
@@ -66,16 +67,24 @@
                 {%endif%}
                 {%endwith%}
             <h1>Food Promotion Page</h1>
+            <button class = "formButton" id = "formButton" onclick = "hideForm()">Add Promotion</button>
+            
+             
+        
             
             <!-- Form used to add images to the slideshow -->
-            <form id = "upload" action="/postPromotion" method="POST" class = "register-form" enctype="multipart/form-data" style="display: none";> <!-- hidden at first until add image button is pressed-->
+            <form id = "upload" action="/postPromotion" method="POST" class = "upload" enctype="multipart/form-data" style="display: none";> <!-- hidden at first until add image button is pressed-->
+                <h3>Advertisement Submission</h3>
                 <input type = "text" name = "caption" placeholder = "Enter caption">
                 <input type = "file" name = "image"  placeholder = "Add Image">
                 <button type = "submit">Upload Promotion</button>
             </form>
             <br>
-            <button class="btn btn-outline-success" id = "formButton" onclick = "hideForm()">Add Promotion</button>
-            
+            <br>
+            <div id = "advertisement">
+                <h1>Billboard</h1>
+                
+            </div>
             
             <!-- Interactive slideshow that checks each image in Promotion and displays them-->
             <div id="promotions" class="carousel slide" data-bs-ride="carousel">
@@ -90,6 +99,8 @@
                         </div>
                     {% endfor %}
                 </div>
+                
+                <!-- Buttons -->
                 <button class="carousel-control-prev" type="button" data-bs-target="#promotions" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
@@ -99,6 +110,9 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
+            <!-- Gap to put space underneath slideshow-->
+            <br><br>
             
 
            
@@ -112,7 +126,7 @@
                     var button = document.getElementById("formButton")
                     if(form.style.display == "block"){
                         form.style.display = "none";
-                        button.textContent = "Add Image";
+                        button.textContent = "Add Promotion";
                     }
                     else{
                         form.style.display = "block";
