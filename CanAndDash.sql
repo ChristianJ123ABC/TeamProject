@@ -87,9 +87,13 @@ CREATE TABLE Orders (
 CREATE TABLE Subscriptions (
     subscription_id INT AUTO_INCREMENT PRIMARY KEY,
     food_owner_id INT NOT NULL,
+    stripe_subscription_id VARCHAR(255) NOT NULL,
+    plan_name VARCHAR(255) NOT NULL,
+    amount INT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     payment_status ENUM('paid', 'unpaid') DEFAULT 'unpaid',
+    next_payment_date DATETIME NOT NULL,
     FOREIGN KEY (food_owner_id) REFERENCES FoodOwners(food_owner_id) ON DELETE CASCADE
 );
 
