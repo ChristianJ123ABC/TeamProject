@@ -52,11 +52,13 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, redirect, request, render_template
-
+from flask import request, jsonify
+from datetime import datetime
 import re
 import stripe
 import os
-
+import json
+import logging
 
 #Start -code by prakash
 
@@ -67,6 +69,7 @@ stripe.api_key = "sk_test_51QtHxkE9I53MxGEG7q4d6GghW7i88Wdb1ddzxsahEuswMEzNK1qW2
 
 # Your website domain
 YOUR_DOMAIN = "http://localhost:5000"
+app.config['STRIPE_PUBLIC_KEY'] = "pk_test_51QtHxkE9I53MxGEGGlW18Yii7C5kQ70WVsj8fZCkHqk5U8MPND3NhLMp1ETOvIDYXeOdpkxbbTB91HiP51RH9dPv00C71btimR"
 
 #Start -code by prakash
 
@@ -88,6 +91,7 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 app.secret_key = "test"
 mysql = MySQL(app)
 
+logging.basicConfig(level=logging.INFO)
 
 #Uploading files
 
@@ -183,6 +187,48 @@ def register():
         
 
         
+ #code started by prakash#
+
+ # If the user is a driver, create a Stripe Checkout Session
+        if role == "driver":
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    payment_method_types=["card"],
+                    line_items=[
+                        {
+                            "price_data": {
+                                "currency": "usd",
+                                "product_data": {
+                                    "name": "Driver Joining Fee",
+                                },
+                                "unit_amount": 1000,  # Joining fee in cents (e.g., $10.00)
+                            },
+                            "quantity": 1,
+                        }
+                    ],
+                    mode="payment",
+                    success_url=url_for("register_success", _external=True),
+                    cancel_url=url_for("register", _external=True),
+                   metadata={
+                        "full_name": full_name,
+                        "email": email,
+                        "password": hashPass,  # Store the hashed password in metadata
+                        "role": role,
+                        "phone_number": phone_number,
+                        "address": address,
+                    },
+                )
+                return redirect(checkout_session.url, code=303)
+            except stripe.error.StripeError as e:
+                flash(f"Payment failed: {str(e)}")
+                return redirect(url_for("register"))
+
+        #code end by prakash#
+
+
+
+
+
         #inserts the data into the database
         
         cursor = mysql.connection.cursor()
@@ -218,6 +264,8 @@ def register():
         
 
         
+
+
     
 @app.route('/login', methods = ["GET", "POST"])
 def login():
@@ -310,6 +358,96 @@ def foodOwner():
 
 #START: CODE COMPLETED BY PRAKASH
 
+
+@app.route("/stripe_webhook", methods=["GET", "POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, "whsec_MyZAqVSQzHVCuEAYL3CaTyBwXJNgDddj"  # Replace with your webhook secret
+        )
+    except ValueError as e:
+        logging.error(f"ValueError: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except stripe.error.SignatureVerificationError as e:
+        logging.error(f"SignatureVerificationError: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+    # Handle the checkout.session.completed event
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        metadata = session.get("metadata", {})
+
+        # Extract common details from metadata
+        full_name = metadata.get("full_name")
+        email = metadata.get("email")
+        password = metadata.get("password")
+        role = metadata.get("role")
+        phone_number = metadata.get("phone_number")
+        address = metadata.get("address")
+
+        # Save user details to the database
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute("INSERT INTO Users (full_name, email, password, role, phone_number, address) VALUES (%s, %s, %s, %s, %s, %s)",
+                           (full_name, email, password, role, phone_number, address))
+            mysql.connection.commit()
+
+            if role == "driver":
+                # Save driver details
+                cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)",
+                               (full_name, phone_number))
+                mysql.connection.commit()
+                logging.info(f"Driver {full_name} ({email}) created successfully.")
+
+            elif role == "foodOwner":
+                # Save food owner details
+                cursor.execute("INSERT INTO FoodOwners (full_name, phone_number) VALUES (%s, %s)",
+                               (full_name, phone_number))
+                mysql.connection.commit()
+                logging.info(f"Food Owner {full_name} ({email}) created successfully.")
+
+        except Exception as e:
+            logging.error(f"Error saving user data: {str(e)}")
+            mysql.connection.rollback()
+        finally:
+            cursor.close()
+
+    # Handle subscription events
+    elif event["type"] == "invoice.payment_succeeded":
+        # Handle subscription renewal for food owners
+        invoice = event["data"]["object"]
+        stripe_subscription_id = invoice["subscription"]
+        subscription = stripe.Subscription.retrieve(stripe_subscription_id)
+
+        # Extract subscription details
+        plan_name = subscription["plan"]["nickname"]
+        amount = subscription["plan"]["amount"]
+        start_date = datetime.fromtimestamp(subscription["current_period_start"])
+        end_date = datetime.fromtimestamp(subscription["current_period_end"])
+        next_payment_date = datetime.fromtimestamp(subscription["current_period_end"])
+
+        # Save subscription details to the database
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute("INSERT INTO Subscriptions (food_owner_id, stripe_subscription_id, plan_name, amount,payment_status, start_date, end_date, next_payment_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                           (session["food_owner_id"], stripe_subscription_id, plan_name, amount, "active", start_date, end_date, next_payment_date))
+            mysql.connection.commit()
+            logging.info(f"Subscription {stripe_subscription_id} updated successfully.")
+        except Exception as e:
+            logging.error(f"Error saving subscription data: {str(e)}")
+            mysql.connection.rollback()
+        finally:
+            cursor.close()
+
+    return jsonify({"success": True}), 200
+
+
+
+
+
 @app.route('/Cprofile', methods=["GET", "POST"])
 def Cprofile():
     return render_template("Cprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
@@ -329,7 +467,7 @@ def Cpayment():
 
 
 # Create Checkout Session for One-Time Payment
-@app.route("/create-checkout-session-one-time", methods=["POST"])
+@app.route("/create-checkout-session-one-time", methods=["GET", "POST"])
 def create_checkout_session_one_time():
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -374,13 +512,13 @@ def Fprofile():
 
 
 # Subscription Page
-@app.route('/subscribe')
-def Fpayment():
-    return render_template("Fpayment.html") # Subscription payment page
+@app.route('/Subscribe')
+def subscription():
+    return render_template("subscription.html") # Subscription payment page
 
 
 # Create Checkout Session for Subscription
-@app.route("/create-checkout-session-subscription", methods=["POST"])
+@app.route("/create-checkout-session-subscription", methods=["GET", "POST"])
 def create_checkout_session_subscription():
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -394,6 +532,7 @@ def create_checkout_session_subscription():
             mode="subscription",
             success_url=f"{YOUR_DOMAIN}/success",
             cancel_url=f"{YOUR_DOMAIN}/cancel"
+        
         )
         return redirect(checkout_session.url, code=303)
     except Exception as e:
