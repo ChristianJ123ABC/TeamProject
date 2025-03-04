@@ -207,7 +207,7 @@ def register():
                         }
                     ],
                     mode="payment",
-                    success_url=url_for("register_success", _external=True),
+                    success_url=url_for("success", _external=True),
                     cancel_url=url_for("register", _external=True),
                    metadata={
                         "full_name": full_name,
@@ -431,6 +431,7 @@ def stripe_webhook():
 
         # Save subscription details to the database
         cursor = mysql.connection.cursor()
+
         try:
             cursor.execute("INSERT INTO Subscriptions (food_owner_id, stripe_subscription_id, plan_name, amount,payment_status, start_date, end_date, next_payment_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                            (session["food_owner_id"], stripe_subscription_id, plan_name, amount, "active", start_date, end_date, next_payment_date))
