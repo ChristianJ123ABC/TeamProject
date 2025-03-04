@@ -95,7 +95,7 @@ logging.basicConfig(level=logging.INFO)
 
 #Uploading files
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg,'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
 
 
