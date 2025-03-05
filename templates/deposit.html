@@ -8,15 +8,79 @@
    
 </head>
 <body>
-  <h1>Upload your BOttles or cans image</h1>
-  
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Can & Dash</title>
+
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+
+ <!-- nav bar-->
+ <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+   
+        <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
+
+    
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+    
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('schedulePickup') }}">Schedule Pickup</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('foodMarketplace') }}">Food Marketplace</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('Cprofile') }}">Profile</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('deposit') }}">Deposit Bottles</a></li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="{{url_for('Cpayment') }}">
+                    </a>
+                </li>
+            </ul>
+
+         
+            <div class="d-flex align-items-center">
+                <a href="{{url_for('Cpayment') }}" class="nav-link basket-icon me-3">🛒</a>
+                <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+
+
+{% with messages = get_flashed_messages()%}
+{% if messages%}
+   {% for message in messages%}
+   <h2>{{message}}</h2>
+    {%endfor%}
+   {%endif%}
+   {%endwith%}
+
+   <h1>Deposit Bottles</h1>
+
+   <form id = "deposit" action="/deposit" method="POST" class = "deposit"> <!-- hidden at first until add image button is pressed-->
+    <h3>Enter your TOTAL amount of bottles</h3>
+    <input type = "text" name = "bottles" placeholder = "Bottles">
+    <button type = "submit">Deposit</button>
+  </form>
+
+
+  <h2><a href = "{{url_for('redeemCredits')}}">Redeem Bottles</a></h2>
 
 
 
 
 
   
-  <a href="/">submit</a>
-
+  
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

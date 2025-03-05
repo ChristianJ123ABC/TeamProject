@@ -661,6 +661,20 @@ h1, .upload h3{
 }
 
 
+/* Centers and styles the form */
+#deposit {
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    color: #2c3e50;
+    position: relative;  
+    text-align: center; 
+  }
+
 
 
 

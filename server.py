@@ -337,11 +337,47 @@ def login():
             session["phone_number"] = user["phone_number"]
             session["address"] = user["address"]
             session.permanent = True
+
+            #Used to grab the details from their respective tables and redirect them to their dashboard
             if(session["role"] == "customer"):
+                cursor = mysql.connection.cursor()
+                cursor.execute("SELECT * FROM Customers WHERE phone_number= %s", (session["phone_number"],))
+                customer = cursor.fetchone()
+                cursor.close()
+
+                #If the query is correct / phone number from Users equals the one in Customers
+                if customer:
+                    session["customer_id"] = customer["customer_id"]
+                    session["credits"] = customer["credits"]
+
+                
                 return redirect(url_for("customer"))
+            
             elif(session["role"] == "driver"):
+                cursor = mysql.connection.cursor()
+                cursor.execute("SELECT * FROM Drivers WHERE phone_number= %s", (session["phone_number"],))
+                driver = cursor.fetchone()
+                cursor.close()
+
+                if driver:
+                    session["driver_id"] = driver["driver_id"]
+                    session["is_available"] = driver["is_available"]
+                    session["vehicle_type"] = driver["vehicle_type"]
+                    session["history"] = driver["history"]
+                
                 return redirect(url_for("driver"))
+
             else:
+                cursor = mysql.connection.cursor()
+                cursor.execute("SELECT * FROM FoodOwners WHERE phone_number= %s", (session["phone_number"],))
+                foodOwner = cursor.fetchone()
+                cursor.close()
+
+                if foodOwner:
+                    session["food_owner_id"] = foodOwner["food_owner_id"]
+                    session["business_name"] = foodOwner["business_name"]
+                
+
                 return redirect(url_for("foodOwner"))
 
         
@@ -602,6 +638,50 @@ def cancel():
 #END: CODE COMPLETED BY PRAKASH
 
 #START: CODE COMPLETED BY CHRISTIAN
+@app.route("/deposit", methods = ["GET", "POST"])
+def deposit():
+    if request.method == "GET":
+        return render_template("deposit.html", credits=session["credits"], customer_id=session["customer_id"])
+    
+    else:
+        #For every bottle, you get 10 cent
+        bottles = int(request.form["bottles"])
+        credits = bottles / 10
+        cursor = mysql.connection.cursor()
+        
+        cursor.execute("UPDATE Customers SET credits = credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
+        mysql.connection.commit()
+        cursor.close()
+        
+        #F-string used to display the variables alongside Flash
+        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits!")
+
+        session["credits"] = session["credits"] + credits
+
+        return redirect(url_for("deposit"))
+    
+
+@app.route('/redeemCredits')
+def redeemCredits():
+    if session["credits"] == 0:
+        flash("You cannot redeem any credits since you do not have any")
+        return redirect(url_for("deposit"))
+    
+    else:
+        flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
+        mysql.connection.commit()
+        cursor.close()
+
+        
+        session["credits"] = 0
+
+        return redirect(url_for("deposit"))
+
+    
+
+
 @app.route("/updateCProfile", methods=["GET", "POST"])
 def updateCProfile():
     if request.method == "GET":
