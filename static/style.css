@@ -675,6 +675,12 @@ h1, .upload h3{
     text-align: center; 
   }
 
+#deposit a{
+    font-weight: bold;
+    text-decoration: none;
+    color: #0cf704;
+}
+
 
 
 
