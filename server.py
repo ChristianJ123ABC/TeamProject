@@ -60,18 +60,15 @@ import os
 import json
 import logging
 
-#Start -code by prakash
 
-app = Flask(__name__, static_url_path="", static_folder="public")
+
+#app = Flask(__name__, static_url_path="", static_folder="public")
 
 # Stripe API Keys 
 stripe.api_key = "sk_test_51QtHxkE9I53MxGEG7q4d6GghW7i88Wdb1ddzxsahEuswMEzNK1qW2EO3RWguhlwcEWOzZAyXl8SwsKSnwzP0Gln700uKNfydfi"
 
-# Your website domain
-YOUR_DOMAIN = "http://localhost:5000"
-app.config['STRIPE_PUBLIC_KEY'] = "pk_test_51QtHxkE9I53MxGEGGlW18Yii7C5kQ70WVsj8fZCkHqk5U8MPND3NhLMp1ETOvIDYXeOdpkxbbTB91HiP51RH9dPv00C71btimR"
 
-#Start -code by prakash
+
 
 
 
@@ -89,6 +86,11 @@ app.config['MYSQL_DB'] = 'railway'
 app.config['MYSQL_PORT'] = 13847
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 app.secret_key = "test"
+
+# Your website domain
+YOUR_DOMAIN = "http://localhost:5000"
+app.config['STRIPE_PUBLIC_KEY'] = "pk_test_51QtHxkE9I53MxGEGGlW18Yii7C5kQ70WVsj8fZCkHqk5U8MPND3NhLMp1ETOvIDYXeOdpkxbbTB91HiP51RH9dPv00C71btimR"
+
 mysql = MySQL(app)
 
 logging.basicConfig(level=logging.INFO)
@@ -189,6 +191,15 @@ def register():
         
  #code started by prakash#
 
+ # Print the query data for debugging
+        print(f"Full Name: {full_name}")
+        print(f"Email: {email}")
+        print(f"Role: {role}")
+        print(f"Phone Number: {phone_number}")
+        print(f"Address: {address}")
+        print(f"Hashed Password: {hashPass}")
+
+        
  # If the user is a driver, create a Stripe Checkout Session
         if role == "driver":
             try:
@@ -213,7 +224,7 @@ def register():
                         "full_name": full_name,
                         "email": email,
                         "password": hashPass,  # Store the hashed password in metadata
-                        "role": role,
+                        "role": "driver",
                         "phone_number": phone_number,
                         "address": address,
                     },
@@ -229,9 +240,10 @@ def register():
 
 
 
-        #inserts the data into the database
+        #inserts the data into the database non- driver role 
         
         cursor = mysql.connection.cursor()
+    try:
         cursor.execute("INSERT INTO Users (full_name, email, password, role, phone_number, address) VALUES (%s, %s, %s, %s, %s, %s)", 
                        (full_name, email, hashPass, role, phone_number, address))
         mysql.connection.commit()
@@ -243,24 +255,27 @@ def register():
                        (full_name, phone_number, address))
             mysql.connection.commit()
 
-        elif(role == "driver"):
-            cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)", 
+        elif role == "driver":
+            cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)",
                        (full_name, phone_number))
             mysql.connection.commit()
+
+        
 
         elif(role == "food_owner"):
             cursor.execute("INSERT INTO FoodOwners (full_name, phone_number) VALUES (%s, %s)", 
                        (full_name, phone_number))
             mysql.connection.commit()
         
-        cursor.close()
-
         flash("Account created successfully!")
-
-     
-
+    except Exception as e:
+      logging.error(f"Error saving user data: {str(e)}")
+      mysql.connection.rollback()
+      flash("An error occurred. Please try again.")
+    finally:
+              cursor.close()
         
-        return render_template("register.html")
+    return render_template("register.html")
         
 
         
@@ -360,7 +375,7 @@ def foodOwner():
 #START: CODE COMPLETED BY PRAKASH
 
 
-@app.route("/stripe_webhook", methods=["GET", "POST"])
+@app.route("/stripe_webhook", methods=["POST"])
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get("Stripe-Signature")
@@ -375,13 +390,20 @@ def stripe_webhook():
     except stripe.error.SignatureVerificationError as e:
         logging.error(f"SignatureVerificationError: {str(e)}")
         return jsonify({"error": str(e)}), 400
+    
+
+        # Log the event type
+    logging.info(f"Received event: {event['type']}")
 
     # Handle the checkout.session.completed event
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         metadata = session.get("metadata", {})
 
-        # Extract common details from metadata
+         # Log the metadata
+        logging.info(f"Session metadata: {metadata}")
+
+# Extract driver details from metadata
         full_name = metadata.get("full_name")
         email = metadata.get("email")
         password = metadata.get("password")
@@ -389,7 +411,10 @@ def stripe_webhook():
         phone_number = metadata.get("phone_number")
         address = metadata.get("address")
 
-        # Save user details to the database
+        # Log the extracted data
+        logging.info(f"Extracted data: full_name={full_name}, email={email}, role={role}")
+
+        # Save driver details to the database
         cursor = mysql.connection.cursor()
         try:
             cursor.execute("INSERT INTO Users (full_name, email, password, role, phone_number, address) VALUES (%s, %s, %s, %s, %s, %s)",
@@ -397,21 +422,12 @@ def stripe_webhook():
             mysql.connection.commit()
 
             if role == "driver":
-                # Save driver details
                 cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)",
                                (full_name, phone_number))
                 mysql.connection.commit()
                 logging.info(f"Driver {full_name} ({email}) created successfully.")
-
-            elif role == "foodOwner":
-                # Save food owner details
-                cursor.execute("INSERT INTO FoodOwners (full_name, phone_number) VALUES (%s, %s)",
-                               (full_name, phone_number))
-                mysql.connection.commit()
-                logging.info(f"Food Owner {full_name} ({email}) created successfully.")
-
         except Exception as e:
-            logging.error(f"Error saving user data: {str(e)}")
+            logging.error(f"Error saving driver data: {str(e)}")
             mysql.connection.rollback()
         finally:
             cursor.close()
@@ -430,12 +446,16 @@ def stripe_webhook():
         end_date = datetime.fromtimestamp(subscription["current_period_end"])
         next_payment_date = datetime.fromtimestamp(subscription["current_period_end"])
 
+
+       # Log the subscription details
+        logging.info(f"Subscription details: plan_name={plan_name}, amount={amount}, start_date={start_date}, end_date={end_date}, next_payment_date={next_payment_date}")
+        
         # Save subscription details to the database
         cursor = mysql.connection.cursor()
 
         try:
-            cursor.execute("INSERT INTO Subscriptions (food_owner_id, stripe_subscription_id, plan_name, amount,payment_status, start_date, end_date, next_payment_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                           (session["food_owner_id"], stripe_subscription_id, plan_name, amount, "active", start_date, end_date, next_payment_date))
+            cursor.execute("INSERT INTO Subscriptions (food_owner_id, stripe_subscription_id, plan_name, amount, payment_status, start_date, end_date, next_payment_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                           (metadata.get("user_id"), stripe_subscription_id, plan_name, amount, "active", start_date, end_date, next_payment_date))
             mysql.connection.commit()
             logging.info(f"Subscription {stripe_subscription_id} updated successfully.")
         except Exception as e:
@@ -516,12 +536,32 @@ def Fprofile():
 # Subscription Page
 @app.route('/Subscribe')
 def subscription():
-    return render_template("subscription.html") # Subscription payment page
+        if "user_id" not in session or session["role"] != "food_owner":
+           flash("You must be logged in as a food owner to view this page.")
+           return redirect(url_for("login"))
+
+        cursor = mysql.connection.cursor()
+        try:
+            cursor.execute("SELECT * FROM Subscriptions WHERE user_id = %s", (session["user_id"],))
+            subscriptions = cursor.fetchall()
+        except Exception as e:
+             logging.error(f"Error fetching subscription data: {str(e)}")
+             subscriptions = []
+        finally:
+             cursor.close()
+
+        return render_template("subscription.html", subscriptions=subscriptions)
+  #  return render_template("subscription.html") # Subscription payment page
 
 
 # Create Checkout Session for Subscription
 @app.route("/create-checkout-session-subscription", methods=["GET", "POST"])
 def create_checkout_session_subscription():
+
+    if "user_id" not in session or session["role"] != "food_owner":
+        flash("You must be logged in as a food owner to subscribe.")
+        return redirect(url_for("login"))
+
     try:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -533,12 +573,18 @@ def create_checkout_session_subscription():
             ],
             mode="subscription",
             success_url=f"{YOUR_DOMAIN}/success",
-            cancel_url=f"{YOUR_DOMAIN}/cancel"
-        
+            cancel_url=f"{YOUR_DOMAIN}/cancel",
+            metadata={
+                "user_id": session["user_id"],  # Pass the logged-in user's ID
+                "email": session["email"],      # Pass the logged-in user's email
+                "role": session["role"],        # Pass the logged-in user's role
+            },
         )
         return redirect(checkout_session.url, code=303)
     except Exception as e:
-        return str(e), 400
+        logging.error(f"Error creating Stripe Checkout Session: {str(e)}")
+        flash("Payment failed. Please try again.")
+        return redirect(url_for("subscription"))
 
 
 # Success Page
