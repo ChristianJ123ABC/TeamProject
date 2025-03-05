@@ -363,7 +363,7 @@ def login():
                     session["driver_id"] = driver["driver_id"]
                     session["is_available"] = driver["is_available"]
                     session["vehicle_type"] = driver["vehicle_type"]
-                    session["history"] = driver["history"]
+                    session["history"] = driver.get("history",[])  #safely access history
                 
                 return redirect(url_for("driver"))
 
