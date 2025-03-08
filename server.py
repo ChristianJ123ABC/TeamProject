@@ -54,11 +54,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, redirect, request, render_template
 from flask import request, jsonify
 from datetime import datetime
+from datetime import date
 import re
 import stripe
 import os
 import json
 import logging
+import random, string
 
 
 
@@ -392,9 +394,45 @@ def login():
 def customer():
     return render_template("customer.html")
 
+# CODE COMPLETED BY GLENN
 @app.route('/driver')
 def driver():
-    return render_template("driver.html")
+    driver_id = session.get("driver_id")
+    current_delivery = None
+    if driver_id:
+        cursor = mysql.connection.cursor()
+        # Query the accepted pickup for the current driver (assumes one active delivery at a time)
+        cursor.execute(
+            "SELECT * FROM Pickups WHERE driver_id = %s AND status = 'accepted' LIMIT 1",
+            (driver_id,)
+        )
+        current_delivery = cursor.fetchone()
+        cursor.close()
+    
+    # Use the current delivery details if found, otherwise, show default values.
+    delivery_status = current_delivery["status"] if current_delivery else "Idle"
+    delivery_destination = "N/A"
+    if current_delivery and current_delivery.get("pickup_time"):
+        # Assuming pickup_time is a time object, format it as a string.
+        delivery_eta = current_delivery["pickup_time"].strftime("%H:%M")
+    else:
+        delivery_eta = "N/A"
+    
+    # Fetch upcoming or past deliveries
+    upcoming_deliveries = []
+    past_deliveries = []
+    
+    return render_template("driver.html",
+                           driver_name=session.get("full_name", "Driver"),
+                           driver_vehicle=session.get("vehicle_type", "N/A"),
+                           delivery_status=delivery_status,
+                           delivery_destination=delivery_destination,
+                           delivery_eta=delivery_eta,
+                           upcoming_deliveries=upcoming_deliveries,
+                           earnings_today=0,
+                           earnings_week=0,
+                           earnings_total=0,
+                           past_deliveries=past_deliveries)
 
 @app.route('/foodOwner')
 def foodOwner():
@@ -556,9 +594,99 @@ def create_checkout_session_one_time():
 def Dprofile():
     return render_template("Dprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
+# CODE COMPLETED BY GLENN
+# Routes for Pickup Request Actions
+
 @app.route('/pickupRequest')
 def pickupRequest():
-    return render_template("pickupRequest.html")
+    # Fetch only pending pickup requests from the database
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM Pickups WHERE status = 'pending'")
+    pickups = cursor.fetchall()
+    cursor.close()
+    return render_template("pickupRequest.html", pending_pickups=pickups)
+
+@app.route('/accept-pickup/<int:pickup_id>', methods=['POST'])
+def accept_pickup(pickup_id):
+    # Ensure that only a logged-in driver can accept a pickup
+    driver_id = session.get("driver_id")
+    if not driver_id:
+        flash("You must be logged in as a driver to accept pickups.")
+        return redirect(url_for("login"))
+    
+    cursor = mysql.connection.cursor()
+    # Update the pickup request: mark it as accepted and assign the driver_id
+    cursor.execute(
+        "UPDATE Pickups SET status = 'accepted', driver_id = %s WHERE pickup_id = %s",
+        (driver_id, pickup_id)
+    )
+    mysql.connection.commit()
+    cursor.close()
+    flash(f"Pickup request {pickup_id} accepted!")
+    return redirect(url_for('pickupRequest'))
+
+@app.route('/decline-pickup/<int:pickup_id>', methods=['POST'])
+def decline_pickup(pickup_id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("DELETE FROM Pickups WHERE pickup_id = %s", (pickup_id,))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f"Pickup request {pickup_id} declined.")
+    return redirect(url_for('pickupRequest'))
+
+@app.route('/add-random-pickup', methods=['POST'])
+def add_random_pickup():
+    # For visual testing, we assume customer_id is 1.
+    customer_id = 1  
+    pickup_date = date.today()
+    # Generate a random time between 10:00 and 18:00
+    hour = random.randint(10, 18)
+    minute = random.randint(0, 59)
+    # HH:MM:SS (MySQL TIME format)
+    pickup_time = f"{hour:02d}:{minute:02d}:00"
+    status = 'pending'
+    credits_earned = 0.00
+
+    cursor = mysql.connection.cursor()
+    cursor.execute(
+        "INSERT INTO Pickups (customer_id, pickup_date, pickup_time, status, credits_earned) VALUES (%s, %s, %s, %s, %s)",
+        (customer_id, pickup_date, pickup_time, status, credits_earned)
+    )
+    mysql.connection.commit()
+    cursor.close()
+    flash("Random pickup request added!")
+    return redirect(url_for('pickupRequest'))
+
+@app.route('/add-random-customer', methods=['POST'])
+def add_random_customer():
+    email = f"{''.join(random.choices(string.ascii_lowercase, k=8))}@example.com"
+    password = generate_password_hash("password123")
+    role = "customer"
+    
+    cursor = mysql.connection.cursor()
+    cursor.execute(
+        "INSERT INTO Users (email, password, role) VALUES (%s, %s, %s)",
+        (email, password, role)
+    )
+    mysql.connection.commit()
+    user_id = cursor.lastrowid  # Get the inserted user_id
+
+    # Generate random customer details
+    full_name = f"Customer {user_id}"
+    phone_number = ''.join(random.choices(string.digits, k=10))
+    address = f"{random.randint(1, 999)} Main St"
+    credits = 0.00
+
+    # Insert into Customers table (customer_id should match user_id)
+    cursor.execute(
+        "INSERT INTO Customers (customer_id, full_name, phone_number, address, credits) VALUES (%s, %s, %s, %s, %s)",
+        (user_id, full_name, phone_number, address, credits)
+    )
+    mysql.connection.commit()
+    cursor.close()
+    
+    flash(f"Random customer {full_name} added!")
+    return redirect(url_for('pickupRequest'))
 
 @app.route('/earningReport')
 def earningReport():
