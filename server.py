@@ -561,32 +561,75 @@ def foodMarketplace():
 def Cpayment():
     return render_template("Cpayment.html")  # One-time payment page
 
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    item = request.json
 
-# Create Checkout Session for One-Time Payment
-@app.route("/create-checkout-session-one-time", methods=["GET", "POST"])
-def create_checkout_session_one_time():
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "product_data": {
-                            "name": "One-Time Purchase",
-                        },
-                        "unit_amount": 500,  # $5.00
-                    },
-                    "quantity": 1,
-                }
-            ],
-            mode="payment",
-            success_url=f"{YOUR_DOMAIN}/success",
-            cancel_url=f"{YOUR_DOMAIN}/cancel"
-        )
-        return redirect(checkout_session.url, code=303)
-    except Exception as e:
-        return str(e), 400
+    if 'cart' not in session:
+        session['cart'] = []
+
+    session['cart'].append(item)
+    session.modified = True  # Ensure session updates properly
+
+    return jsonify({"message": f"{item['name']} added to cart!"})
+
+
+@app.route('/get_cart')
+def get_cart():
+    return jsonify({"cart": session.get('cart', [])})
+
+
+# Get User Credits (from session,)
+@app.route('/get_user_credit')
+def get_user_credit():
+    return jsonify({"credit": session.get("credits", 0)})
+
+
+# 🛒 Checkout with Credits & Stripe
+@app.route('/create-checkout-session-one-time', methods=['POST'])
+def create_checkout_session():
+    user_credit = session.get("credits", 0)  # Fetch from session
+    cart = session.get('cart', [])
+    
+    total_price = sum(item['price'] for item in cart)
+    delivery_fee = 2 if request.form.get('delivery') else 0
+    total_amount = total_price + delivery_fee
+
+    if user_credit >= total_amount:
+        # Deduct from session credits
+        session["credits"] -= total_amount
+        session.pop('cart', None)  # Clear cart
+        flash("Payment Successful! Paid using credits.", "success")
+        return redirect(url_for('payment_success'))
+
+    remaining_amount = total_amount - user_credit
+
+    # Deduct all user credits from session
+    session["credits"] = 0
+
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': 'Food Order'},
+                'unit_amount': int(remaining_amount * 100),
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=url_for('payment_success', _external=True),
+        cancel_url=url_for('Cpayment', _external=True),
+    )
+
+    return redirect(checkout_session.url, code=303)
+
+
+@app.route('/payment_success')
+def payment_success():
+    session.pop('cart', None)  # Clear cart after successful payment
+    flash("Payment Successful!", "success")
+    return redirect(url_for('foodMarketplace'))
 
 
 
@@ -691,6 +734,8 @@ def add_random_customer():
 @app.route('/earningReport')
 def earningReport():
     return render_template("earningReport.html")
+
+#CODE COMPLETED BY GLENN
 
 @app.route('/Fprofile', methods=["GET", "POST"])
 def Fprofile():
