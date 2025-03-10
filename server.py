@@ -561,32 +561,127 @@ def foodMarketplace():
 def Cpayment():
     return render_template("Cpayment.html")  # One-time payment page
 
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    item = request.json
 
-# Create Checkout Session for One-Time Payment
-@app.route("/create-checkout-session-one-time", methods=["GET", "POST"])
-def create_checkout_session_one_time():
+    if 'cart' not in session:
+        session['cart'] = []
+
+    session['cart'].append(item)
+    session.modified = True  # Ensure session updates properly
+
+    return jsonify({"message": f"{item['name']} added to cart!"})
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    item_name = request.json.get('name')
+    
+    if 'cart' in session:
+        session['cart'] = [item for item in session['cart'] if item['name'] != item_name]
+        session.modified = True
+
+    return jsonify({"message": f"{item_name} removed from cart!", "cart": session.get('cart', [])})
+
+
+
+@app.route('/get_cart')
+def get_cart():
+    return jsonify({"cart": session.get('cart', [])})
+
+
+# Get User Credits (from session,)
+@app.route('/get_user_credit')
+def get_user_credit():
+    return jsonify({"credit": session.get("credits", 0)})
+
+
+# 🛒 Checkout with Credits & Stripe
+CREDIT_TO_EURO = 1 / 15  # 15 credits = 1 euro
+
+
+@app.route('/create-checkout-session-one-time', methods=['POST'])
+def create_checkout_session():
+    cursor = mysql.connection.cursor()
+    
+    # Fetch user credit safely
+    if "customer_id" not in session:
+        return jsonify({"credit": 0})  #  Return 0 if not logged in
+
+    cursor = mysql.connection.cursor()
+    
     try:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "product_data": {
-                            "name": "One-Time Purchase",
-                        },
-                        "unit_amount": 500,  # $5.00
-                    },
-                    "quantity": 1,
-                }
-            ],
-            mode="payment",
-            success_url=f"{YOUR_DOMAIN}/success",
-            cancel_url=f"{YOUR_DOMAIN}/cancel"
-        )
-        return redirect(checkout_session.url, code=303)
+        cursor.execute("SELECT credits FROM Customers WHERE customer_id = %s", (session["customer_id"],))
+        result = cursor.fetchone()
+        user_credit = result[0] if result and result[0] is not None else 0  #  Handle None safely
     except Exception as e:
-        return str(e), 400
+        print(f"Error fetching user credit: {e}")
+        user_credit = 0  #  Prevent crashes
+    finally:
+        cursor.close()  #  Always close cursor
+
+    #user_credit = result[0] if result else 0 # safely  fallback prevents keyerror
+
+    # Fetch cart details
+    cart = session.get('cart', [])
+    total_price = sum(item['price'] for item in cart)
+    delivery_fee = 2 if request.form.get('delivery') == "yes" else 0
+    total_amount = total_price + delivery_fee
+
+    use_credits = request.form.get('use_credits') == "yes"
+
+    if use_credits:
+        if user_credit >= total_amount:
+            # Deduct from credits only
+            cursor = mysql.connection.cursor()
+            cursor.execute("UPDATE Customers SET credits = credits - %s WHERE customer_id = %s", (total_amount, session["customer_id"]))
+            mysql.connection.commit()
+            cursor.close()
+
+            session["credits"] -= total_amount
+            session.pop('cart', None)  # Clear cart
+            flash("Payment Successful! Paid using credits.", "success")
+            return redirect(url_for('payment_success'))
+
+        # Deduct all available credits and pay the remaining via Stripe
+        remaining_amount = total_amount - user_credit
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
+        mysql.connection.commit()
+        cursor.close()
+        session["credits"] = 0
+
+    #else:
+     #   remaining_amount = total_amount  # Pay full amount via Stripe
+
+    if remaining_amount > 0:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'eur',
+                    'product_data': {'name': 'Food Order'},
+                    'unit_amount': int(remaining_amount * 100),  # Convert to cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=url_for('payment_success', _external=True),
+            cancel_url=url_for('Cpayment', _external=True),
+        )
+
+        return redirect(checkout_session.url, code=303)
+
+    flash("Payment Successful! No additional payment required.", "success")
+    return redirect(url_for('payment_success'))
+
+
+@app.route('/payment_success')
+def payment_success():
+    session.pop('cart', None)  # Clear cart after successful payment
+    flash("Payment Successful!", "success")
+    return redirect(url_for('foodMarketplace'))
 
 
 
@@ -691,6 +786,8 @@ def add_random_customer():
 @app.route('/earningReport')
 def earningReport():
     return render_template("earningReport.html")
+
+#CODE COMPLETED BY GLENN
 
 @app.route('/Fprofile', methods=["GET", "POST"])
 def Fprofile():

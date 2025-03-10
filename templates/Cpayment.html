@@ -46,14 +46,91 @@
     </div>
 </nav>
 
-    <h1>Checkout</h1>
-    <p>Pay $5.00 for this product.</p>
-    
-    <form action="/create-checkout-session-one-time" method="POST">
-        <button type="submit">Buy Now</button>
-    </form>
-    
-    <br>
+<h1>Checkout</h1>
+
+<h3>Your Selected Items:</h3>
+<ul id="cart-items"></ul>
+<p>Total: <span id="total-price">0</span> Credits</p>
+<label>
+    <input type="checkbox" id="delivery" onchange="updateTotal()"> Include Delivery Charge (2 EURO)
+</label>
+
+<label>
+    <input type="checkbox" id="use_credits" onchange="updateTotal()"> Use My Credits
+</label>
+
+<p>Your Credits: <span id="user-credit">Loading...</span> Credits</p>
+<p>Amount to Pay: <span id="finalAmount">0</span> EUR</p>
+
+<form action="/create-checkout-session-one-time" method="POST">
+    <input type="hidden" name="use_credits" id="use-credits-hidden">
+    <input type="hidden" name="delivery" id="delivery-hidden">
+    <input type="hidden" name="final_amount" id="final-amount-hidden">
+    <button type="submit">Proceed to Payment</button>
+</form>
+
+<script>
+    let totalPrice = 0; 
+
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch('/get_cart')
+            .then(response => response.json())
+            .then(data => {
+                let cartList = document.getElementById("cart-items");
+                cartList.innerHTML = "";
+                totalPrice = 0;
+
+                data.cart.forEach(item => {
+                    let li = document.createElement("li");
+                    li.innerHTML = `${item.name} - ${item.price} EUR 
+                        <button onclick="removeFromCart('${item.name}')">Remove</button>`;
+                    cartList.appendChild(li);
+                    totalPrice += item.price;
+                });
+
+                updateTotal();
+            });
+
+        document.getElementById("use_credits").addEventListener("change", updateTotal);
+        document.getElementById("delivery").addEventListener("change", updateTotal);
+    });
+
+    function updateTotal() {
+        fetch('/get_user_credit')
+            .then(response => response.json())
+            .then(data => {
+                let creditBalance = data.credit; // Now 1 credit = 1 EUR
+                let deliveryFee = document.getElementById("delivery").checked ? 2 : 0;
+                let newTotal = totalPrice + deliveryFee;
+
+                let finalAmount = newTotal;
+                if (document.getElementById("use_credits").checked) {
+                    finalAmount = Math.max(newTotal - creditBalance, 0); // Deduct credits
+                }
+
+                document.getElementById("total-price").textContent = `Total: ${newTotal.toFixed(2)} €`;
+                document.getElementById("user-credit").textContent = `${creditBalance} €`;
+                document.getElementById("finalAmount").textContent = `${finalAmount.toFixed(2)} €`;
+
+                // Pass values to hidden inputs for form submission
+                document.getElementById("use-credits-hidden").value = document.getElementById("use_credits").checked ? "yes" : "no";
+                document.getElementById("delivery-hidden").value = document.getElementById("delivery").checked ? "yes" : "no";
+            });
+    }
+
+    function removeFromCart(name) {
+        fetch('/remove_from_cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload(); // Refresh page to update cart
+        });
+    }
+</script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
