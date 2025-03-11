@@ -868,9 +868,10 @@ def deposit():
 
 @app.route('/redeemCredits')
 def redeemCredits():
+    credits = float(session.get("credits"))  #used to prevent <= error
     
 
-    if session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
+    if credits <= 0 or session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
         flash("You cannot redeem any credits since you do not have any")
         return redirect(url_for("deposit"))
     
@@ -878,7 +879,7 @@ def redeemCredits():
         flash("You cannot use your credits until they are verified")
         return redirect(url_for("deposit"))
     
-    elif session.get("status") == "verified" or session["status"] != "pending":
+    elif session.get("status") == "verified" or session.get("status") != "pending":
         flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
