@@ -857,28 +857,45 @@ def deposit():
         cursor.close()
         
         #F-string used to display the variables alongside Flash
-        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits!")
+        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them")
 
-        session["credits"] = session["credits"] + credits
+        session["credits"] = float(session["credits"]) + float(credits)
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET status = %s WHERE customer_id = %s", ("pending", session["customer_id"]))
+        mysql.connection.commit()
+        cursor.close()
+
+        session["status"] = "pending"
 
         return redirect(url_for("deposit"))
     
 
 @app.route('/redeemCredits')
 def redeemCredits():
-    if session["credits"] == 0:
+    if session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
         flash("You cannot redeem any credits since you do not have any")
         return redirect(url_for("deposit"))
     
-    else:
+    elif session["status"] == "pending":
+        flash("You cannot use your credits until they are verified")
+        return redirect(url_for("deposit"))
+    
+    elif session["status"] == "verified" or session["status"] != "pending":
         flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
         mysql.connection.commit()
         cursor.close()
 
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET status = '' WHERE customer_id = %s", (session["customer_id"],))
+        mysql.connection.commit()
+        cursor.close()
+
         
         session["credits"] = 0
+        session["status"] = " "
 
         return redirect(url_for("deposit"))
 
