@@ -619,7 +619,7 @@ def create_checkout_session():
 
     if user_credit >= total_amount:
         # Deduct from session credits
-        session["credits"] -= total_amount
+        user_credit -= total_amount
         session.pop('cart', None)  # Clear cart
         session.modified = True  # ✅ Ensure session updates properly
         flash("✅ Payment Successful! Paid using credits.", "success")
