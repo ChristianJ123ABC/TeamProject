@@ -910,7 +910,7 @@ def updateCProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
-        if email_exists(email):
+        if email_exists(email) and session["email"] != email:
             flash("Email is already registered, please try again")
             return redirect(url_for("updateCProfile"))
         
@@ -935,7 +935,7 @@ def updateDProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
-        if email_exists(email):
+        if email_exists(email) and session["email"] != email:
             flash("Email is already registered")
             return redirect(url_for("updateDProfile"))
 
