@@ -415,11 +415,6 @@ def driver():
     # Use the current delivery details if found, otherwise, show default values.
     delivery_status = current_delivery["status"] if current_delivery else "Idle"
     delivery_destination = "N/A"
-    if current_delivery and current_delivery.get("pickup_time"):
-        # Assuming pickup_time is a time object, format it as a string.
-        delivery_eta = current_delivery["pickup_time"].strftime("%H:%M")
-    else:
-        delivery_eta = "N/A"
     
     # Fetch upcoming or past deliveries
     upcoming_deliveries = []
@@ -430,7 +425,6 @@ def driver():
                            driver_vehicle=session.get("vehicle_type", "N/A"),
                            delivery_status=delivery_status,
                            delivery_destination=delivery_destination,
-                           delivery_eta=delivery_eta,
                            upcoming_deliveries=upcoming_deliveries,
                            earnings_today=0,
                            earnings_week=0,
