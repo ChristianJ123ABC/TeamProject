@@ -353,6 +353,7 @@ def login():
                 if customer:
                     session["customer_id"] = customer["customer_id"]
                     session["credits"] = customer["credits"]
+                    session["status"] = customer["status"]
 
                 
                 return redirect(url_for("customer"))
@@ -844,7 +845,7 @@ def cancel():
 @app.route("/deposit", methods = ["GET", "POST"])
 def deposit():
     if request.method == "GET":
-        return render_template("deposit.html", credits=session["credits"], customer_id=session["customer_id"])
+        return render_template("deposit.html", status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
     
     else:
         #For every bottle, you get 10 cent
@@ -875,7 +876,7 @@ def deposit():
 def redeemCredits():
     
 
-    if session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
+    if session["credits"] == 0 or session["credits"] == 0.00: 
         flash("You cannot redeem any credits since you do not have any")
         return redirect(url_for("deposit"))
     
@@ -883,7 +884,7 @@ def redeemCredits():
         flash("You cannot use your credits until they are verified")
         return redirect(url_for("deposit"))
     
-    elif session.get("status") == "verified" or session.get("status") != "pending":
+    elif session.get("status") == "verified":
         flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
