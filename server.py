@@ -673,7 +673,7 @@ def payment_success():
     session.pop('cart', None)  # Clear cart after successful payment
     session.modified = True
     flash("✅ Payment Successful!", "success")
-    return redirect(url_for('foodMarketplace'))
+    return redirect(url_for('customer'))
 
 
 
