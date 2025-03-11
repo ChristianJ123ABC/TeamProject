@@ -64,6 +64,8 @@ import random, string
 
 
 
+
+
 #app = Flask(__name__, static_url_path="", static_folder="public")
 
 # Stripe API Keys 
@@ -554,29 +556,51 @@ def schedulePickup():
 
 @app.route('/foodMarketplace')
 def foodMarketplace():
-    return render_template("foodMarketplace.html")
+    cur = mysql.connection.cursor()
+
+    # Fetch restaurants
+    cur.execute("SELECT id, name, image, description FROM Restaurants")
+    restaurants = cur.fetchall()
+
+    # Fetch meals
+    cur.execute("SELECT restaurant_id, meal_name, price FROM Meals")
+    meals = cur.fetchall()
+
+    cur.close()
+
+    print("✅ RESTAURANTS:", restaurants)  # Debugging
+    print("✅ MEALS:", meals)  # Debugging
+
+    return render_template("foodMarketplace.html", restaurants=restaurants, meals=meals)
 
 # Customer payment Page - One-Time Payment
 @app.route('/Cpayment')
 def Cpayment():
     return render_template("Cpayment.html")  # One-time payment page
 
+
+
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     item = request.json
 
-    if 'cart' not in session:
-        session['cart'] = []
+    if 'cart' not in session or not isinstance(session['cart'], list):
+        session['cart'] = []  
 
     session['cart'].append(item)
-    session.modified = True  # Ensure session updates properly
+    session.modified = True 
 
-    return jsonify({"message": f"{item['name']} added to cart!"})
+    print("🛒 Updated Cart:", session['cart'])  
+
+    return jsonify({"message": f"{item['name']} added to cart!", "cart": session['cart']})
+
 
 
 @app.route('/get_cart')
 def get_cart():
-    return jsonify({"cart": session.get('cart', [])})
+    cart_data = session.get('cart', [])
+    print("📦 Fetching Cart from Session:", cart_data)  # 🔍 Debugging
+    return jsonify({"cart": cart_data})
 
 
 # Get User Credits (from session,)
@@ -584,13 +608,16 @@ def get_cart():
 def get_user_credit():
     return jsonify({"credit": session.get("credits", 0)})
 
-
-# 🛒 Checkout with Credits & Stripe
+#  Checkout with Credits & Stripe
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
     user_credit = session.get("credits", 0)  # Fetch from session
     cart = session.get('cart', [])
-    
+
+    if not cart:
+        flash("Your cart is empty. Add items before checking out.", "warning")
+        return redirect(url_for('Cpayment'))
+
     total_price = sum(item['price'] for item in cart)
     delivery_fee = 2 if request.form.get('delivery') else 0
     total_amount = total_price + delivery_fee
@@ -599,21 +626,23 @@ def create_checkout_session():
         # Deduct from session credits
         session["credits"] -= total_amount
         session.pop('cart', None)  # Clear cart
-        flash("Payment Successful! Paid using credits.", "success")
+        session.modified = True  # ✅ Ensure session updates properly
+        flash("✅ Payment Successful! Paid using credits.", "success")
         return redirect(url_for('payment_success'))
 
     remaining_amount = total_amount - user_credit
 
-    # Deduct all user credits from session
+    # Deduct all user credits from session before processing Stripe payment
     session["credits"] = 0
+    session.modified = True
 
     checkout_session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[{
             'price_data': {
-                'currency': 'usd',
+                'currency': 'eur',
                 'product_data': {'name': 'Food Order'},
-                'unit_amount': int(remaining_amount * 100),
+                'unit_amount': int(remaining_amount * 100),  # Convert to cents
             },
             'quantity': 1,
         }],
@@ -624,12 +653,13 @@ def create_checkout_session():
 
     return redirect(checkout_session.url, code=303)
 
-
 @app.route('/payment_success')
 def payment_success():
     session.pop('cart', None)  # Clear cart after successful payment
-    flash("Payment Successful!", "success")
+    session.modified = True
+    flash("✅ Payment Successful!", "success")
     return redirect(url_for('foodMarketplace'))
+
 
 
 
@@ -1006,3 +1036,25 @@ if __name__ == "__main__":
     app.run(debug=True) #updates in real-time + shows bugs / errors on CMD
 
 #END: CODE COMPLETED BY CHRISTIAN
+
+
+if __name__ == "__main__":
+    app.run(debug=True)  # ✅ Make sure this is at the bottom
+
+
+@app.route('/foodMarketplace')
+def foodMarketplace():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, name, image, description FROM Restaurants")
+    rows = cur.fetchall()
+    
+    # Convert tuples to dictionaries for Jinja compatibility
+    restaurants = [{"id": row[0], "name": row[1], "image": row[2], "description": row[3]} for row in rows]
+
+    cur.close()
+    
+    print("✅ RESTAURANTS LOADED:", restaurants)  # Debugging
+
+    return render_template("foodMarketplace.html", restaurants=restaurants)
+
+      
