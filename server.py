@@ -960,7 +960,7 @@ def updateFProfile():
         phone_number = request.form["phone_number"]
         address = request.form["address"]
 
-        if email_exists(email):
+        if email_exists(email) and session["email"] != email:
             flash("Email is already registered")
             return redirect(url_for("updateFProfile"))
         
