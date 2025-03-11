@@ -842,6 +842,11 @@ def deposit():
         return render_template("deposit.html", status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
     
     else:
+        #If the input field is empty
+        if not request.form.get("bottles"):
+            flash("Please enter a number of bottles before submitting")
+            return redirect(url_for("deposit"))
+        
         #For every bottle, you get 10 cent
         bottles = int(request.form["bottles"])
         credits = bottles / 10
