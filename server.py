@@ -907,7 +907,7 @@ def redeemCredits():
     credits = float(session.get("credits"))  #used to prevent <= error
     
 
-    if credits <= 0 or session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
+    if credits <= 0 or credits == 0 or credits == 0.00 or credits == None: 
         flash("You cannot redeem any credits since you do not have any")
         return redirect(url_for("deposit"))
     
