@@ -606,7 +606,7 @@ def get_user_credit():
 #  Checkout with Credits & Stripe
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
-    user_credit = session.get("credits", 0)  # Fetch from session
+    user_credit = float(session.get("credits", 0))  # Fetch from session
     cart = session.get('cart', [])
 
     if not cart:
