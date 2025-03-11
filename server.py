@@ -64,6 +64,8 @@ import random, string
 
 
 
+
+
 #app = Flask(__name__, static_url_path="", static_folder="public")
 
 # Stripe API Keys 
@@ -124,14 +126,7 @@ def phoneNumRange(phone_number):
     return re.match(r"^\d{10}$",phone_number)
 
 
-# Inject datetime so we can use it for time conversion
-@app.context_processor
-def inject_datetime():
-    return dict(datetime=datetime)
-
-@app.template_filter('strftime')
-def format_datetime(value, fmt="%H:%M"):
-    return value.strftime(fmt)
+    
 
 
 #If the user is logged in, it will send them to their designated dashboard, otherwise the homepage
@@ -406,34 +401,28 @@ def customer():
 def driver():
     driver_id = session.get("driver_id")
     current_delivery = None
-    past_deliveries = []
     if driver_id:
         cursor = mysql.connection.cursor()
-        # Query the active (accepted) pickup.
+        # Query the accepted pickup for the current driver (assumes one active delivery at a time)
         cursor.execute(
             "SELECT * FROM Pickups WHERE driver_id = %s AND status = 'accepted' LIMIT 1",
             (driver_id,)
         )
         current_delivery = cursor.fetchone()
-        
-        # Query past (complete) deliveries.
-        cursor.execute(
-            "SELECT * FROM Pickups WHERE driver_id = %s AND status = 'completed' ORDER BY pickup_date DESC, pickup_time DESC",
-            (driver_id,)
-        )
-        past_deliveries = cursor.fetchall()
         cursor.close()
     
-    # Prepare display values.
+    # Use the current delivery details if found, otherwise, show default values.
     delivery_status = current_delivery["status"] if current_delivery else "Idle"
-    delivery_destination = "N/A"  # Update if you have a destination field
+    delivery_destination = "N/A"
     if current_delivery and current_delivery.get("pickup_time"):
-        pickup_timedelta = current_delivery["pickup_time"]
-        # Convert timedelta to a time object (assuming it represents time since midnight)
-        pickup_time = (datetime.min + pickup_timedelta).time()
-        delivery_eta = pickup_time.strftime("%H:%M")
+        # Assuming pickup_time is a time object, format it as a string.
+        delivery_eta = current_delivery["pickup_time"].strftime("%H:%M")
     else:
         delivery_eta = "N/A"
+    
+    # Fetch upcoming or past deliveries
+    upcoming_deliveries = []
+    past_deliveries = []
     
     return render_template("driver.html",
                            driver_name=session.get("full_name", "Driver"),
@@ -441,14 +430,11 @@ def driver():
                            delivery_status=delivery_status,
                            delivery_destination=delivery_destination,
                            delivery_eta=delivery_eta,
-                           current_delivery=current_delivery,  # Pass active delivery details
-                           upcoming_deliveries=[],  # If you add future deliveries, query here.
+                           upcoming_deliveries=upcoming_deliveries,
                            earnings_today=0,
                            earnings_week=0,
                            earnings_total=0,
                            past_deliveries=past_deliveries)
-
-
 
 @app.route('/foodOwner')
 def foodOwner():
@@ -570,40 +556,51 @@ def schedulePickup():
 
 @app.route('/foodMarketplace')
 def foodMarketplace():
-    return render_template("foodMarketplace.html")
+    cur = mysql.connection.cursor()
+
+    # Fetch restaurants
+    cur.execute("SELECT id, name, image, description FROM Restaurants")
+    restaurants = cur.fetchall()
+
+    # Fetch meals
+    cur.execute("SELECT restaurant_id, meal_name, price FROM Meals")
+    meals = cur.fetchall()
+
+    cur.close()
+
+    print("✅ RESTAURANTS:", restaurants)  # Debugging
+    print("✅ MEALS:", meals)  # Debugging
+
+    return render_template("foodMarketplace.html", restaurants=restaurants, meals=meals)
 
 # Customer payment Page - One-Time Payment
 @app.route('/Cpayment')
 def Cpayment():
     return render_template("Cpayment.html")  # One-time payment page
 
+
+
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     item = request.json
 
-    if 'cart' not in session:
-        session['cart'] = []
+    if 'cart' not in session or not isinstance(session['cart'], list):
+        session['cart'] = []  
 
     session['cart'].append(item)
-    session.modified = True  # Ensure session updates properly
+    session.modified = True 
 
-    return jsonify({"message": f"{item['name']} added to cart!"})
+    print("🛒 Updated Cart:", session['cart'])  
 
-@app.route('/remove_from_cart', methods=['POST'])
-def remove_from_cart():
-    item_name = request.json.get('name')
-    
-    if 'cart' in session:
-        session['cart'] = [item for item in session['cart'] if item['name'] != item_name]
-        session.modified = True
-
-    return jsonify({"message": f"{item_name} removed from cart!", "cart": session.get('cart', [])})
+    return jsonify({"message": f"{item['name']} added to cart!", "cart": session['cart']})
 
 
 
 @app.route('/get_cart')
 def get_cart():
-    return jsonify({"cart": session.get('cart', [])})
+    cart_data = session.get('cart', [])
+    print("📦 Fetching Cart from Session:", cart_data)  # 🔍 Debugging
+    return jsonify({"cart": cart_data})
 
 
 # Get User Credits (from session,)
@@ -611,93 +608,58 @@ def get_cart():
 def get_user_credit():
     return jsonify({"credit": session.get("credits", 0)})
 
-
-# 🛒 Checkout with Credits & Stripe
-CREDIT_TO_EURO = 1 / 15  # 15 credits = 1 euro
-
-
+#  Checkout with Credits & Stripe
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
-    cursor = mysql.connection.cursor()
-    
-    # Fetch user credit safely
-    if "customer_id" not in session:
-        return jsonify({"credit": 0})  #  Return 0 if not logged in
-
-    cursor = mysql.connection.cursor()
-    
-    try:
-        cursor.execute("SELECT credits FROM Customers WHERE customer_id = %s", (session["customer_id"],))
-        result = cursor.fetchone()
-        user_credit = result[0] if result and result[0] is not None else 0  #  Handle None safely
-    except Exception as e:
-        print(f"Error fetching user credit: {e}")
-        user_credit = 0  #  Prevent crashes
-    finally:
-        cursor.close()  #  Always close cursor
-
-    #user_credit = result[0] if result else 0 # safely  fallback prevents keyerror
-
-    # Fetch cart details
+    user_credit = session.get("credits", 0)  # Fetch from session
     cart = session.get('cart', [])
+
+    if not cart:
+        flash("Your cart is empty. Add items before checking out.", "warning")
+        return redirect(url_for('Cpayment'))
+
     total_price = sum(item['price'] for item in cart)
-    delivery_fee = 2 if request.form.get('delivery') == "yes" else 0
+    delivery_fee = 2 if request.form.get('delivery') else 0
     total_amount = total_price + delivery_fee
 
-    use_credits = request.form.get('use_credits') == "yes"
+    if user_credit >= total_amount:
+        # Deduct from session credits
+        session["credits"] -= total_amount
+        session.pop('cart', None)  # Clear cart
+        session.modified = True  # ✅ Ensure session updates properly
+        flash("✅ Payment Successful! Paid using credits.", "success")
+        return redirect(url_for('payment_success'))
 
-    if use_credits:
-        if user_credit >= total_amount:
-            # Deduct from credits only
-            cursor = mysql.connection.cursor()
-            cursor.execute("UPDATE Customers SET credits = credits - %s WHERE customer_id = %s", (total_amount, session["customer_id"]))
-            mysql.connection.commit()
-            cursor.close()
+    remaining_amount = total_amount - user_credit
 
-            session["credits"] -= total_amount
-            session.pop('cart', None)  # Clear cart
-            flash("Payment Successful! Paid using credits.", "success")
-            return redirect(url_for('payment_success'))
+    # Deduct all user credits from session before processing Stripe payment
+    session["credits"] = 0
+    session.modified = True
 
-        # Deduct all available credits and pay the remaining via Stripe
-        remaining_amount = total_amount - user_credit
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'eur',
+                'product_data': {'name': 'Food Order'},
+                'unit_amount': int(remaining_amount * 100),  # Convert to cents
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=url_for('payment_success', _external=True),
+        cancel_url=url_for('Cpayment', _external=True),
+    )
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
-        mysql.connection.commit()
-        cursor.close()
-        session["credits"] = 0
-
-    #else:
-     #   remaining_amount = total_amount  # Pay full amount via Stripe
-
-    if remaining_amount > 0:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'eur',
-                    'product_data': {'name': 'Food Order'},
-                    'unit_amount': int(remaining_amount * 100),  # Convert to cents
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=url_for('payment_success', _external=True),
-            cancel_url=url_for('Cpayment', _external=True),
-        )
-
-        return redirect(checkout_session.url, code=303)
-
-    flash("Payment Successful! No additional payment required.", "success")
-    return redirect(url_for('payment_success'))
-
+    return redirect(checkout_session.url, code=303)
 
 @app.route('/payment_success')
 def payment_success():
     session.pop('cart', None)  # Clear cart after successful payment
-    flash("Payment Successful!", "success")
+    session.modified = True
+    flash("✅ Payment Successful!", "success")
     return redirect(url_for('foodMarketplace'))
+
 
 
 
@@ -719,35 +681,22 @@ def pickupRequest():
 
 @app.route('/accept-pickup/<int:pickup_id>', methods=['POST'])
 def accept_pickup(pickup_id):
-    # Retrieve the phone number from the session instead of (or in addition to) driver_id.
-    phone_number = session.get("phone_number")
-    if not phone_number:
+    # Ensure that only a logged-in driver can accept a pickup
+    driver_id = session.get("driver_id")
+    if not driver_id:
         flash("You must be logged in as a driver to accept pickups.")
         return redirect(url_for("login"))
     
-    # Query the Drivers table using the phone number to retrieve driver_id.
     cursor = mysql.connection.cursor()
-    cursor.execute("SELECT driver_id FROM Drivers WHERE phone_number = %s", (phone_number,))
-    driver = cursor.fetchone()
-    if not driver:
-        flash("No driver record found for the logged in phone number.")
-        return redirect(url_for("login"))
-    
-    driver_id = driver["driver_id"]
-    # Update the session to store the driver_id so the dashboard can access it.
-    session["driver_id"] = driver_id
-    
-    # Update the pickup request with the retrieved driver_id.
+    # Update the pickup request: mark it as accepted and assign the driver_id
     cursor.execute(
         "UPDATE Pickups SET status = 'accepted', driver_id = %s WHERE pickup_id = %s",
         (driver_id, pickup_id)
     )
     mysql.connection.commit()
     cursor.close()
-    
     flash(f"Pickup request {pickup_id} accepted!")
     return redirect(url_for('pickupRequest'))
-
 
 @app.route('/decline-pickup/<int:pickup_id>', methods=['POST'])
 def decline_pickup(pickup_id):
@@ -760,8 +709,8 @@ def decline_pickup(pickup_id):
 
 @app.route('/add-random-pickup', methods=['POST'])
 def add_random_pickup():
-    # For visual testing, we assume customer_id is 7.
-    customer_id = 7
+    # For visual testing, we assume customer_id is 1.
+    customer_id = 1  
     pickup_date = date.today()
     # Generate a random time between 10:00 and 18:00
     hour = random.randint(10, 18)
@@ -781,36 +730,36 @@ def add_random_pickup():
     flash("Random pickup request added!")
     return redirect(url_for('pickupRequest'))
 
-@app.route('/complete-delivery/<int:pickup_id>', methods=['POST'])
-def complete_delivery(pickup_id):
-    driver_id = session.get("driver_id")
-    if not driver_id:
-        flash("You must be logged in as a driver to complete deliveries.")
-        return redirect(url_for("login"))
+@app.route('/add-random-customer', methods=['POST'])
+def add_random_customer():
+    email = f"{''.join(random.choices(string.ascii_lowercase, k=8))}@example.com"
+    password = generate_password_hash("password123")
+    role = "customer"
     
     cursor = mysql.connection.cursor()
-    # Verify that the pickup belongs to this driver and is still accepted.
     cursor.execute(
-        "SELECT * FROM Pickups WHERE pickup_id = %s AND driver_id = %s AND status = 'accepted'",
-        (pickup_id, driver_id)
+        "INSERT INTO Users (email, password, role) VALUES (%s, %s, %s)",
+        (email, password, role)
     )
-    pickup = cursor.fetchone()
-    if not pickup:
-        flash("Delivery not found or already completed.")
-        cursor.close()
-        return redirect(url_for("driver"))
-    
-    # Mark the delivery as complete.
+    mysql.connection.commit()
+    user_id = cursor.lastrowid  # Get the inserted user_id
+
+    # Generate random customer details
+    full_name = f"Customer {user_id}"
+    phone_number = ''.join(random.choices(string.digits, k=10))
+    address = f"{random.randint(1, 999)} Main St"
+    credits = 0.00
+
+    # Insert into Customers table (customer_id should match user_id)
     cursor.execute(
-        "UPDATE Pickups SET status = 'completed' WHERE pickup_id = %s",
-        (pickup_id,)
+        "INSERT INTO Customers (customer_id, full_name, phone_number, address, credits) VALUES (%s, %s, %s, %s, %s)",
+        (user_id, full_name, phone_number, address, credits)
     )
     mysql.connection.commit()
     cursor.close()
     
-    flash(f"Delivery {pickup_id} marked as complete!")
-    return redirect(url_for("driver"))
-
+    flash(f"Random customer {full_name} added!")
+    return redirect(url_for('pickupRequest'))
 
 @app.route('/earningReport')
 def earningReport():
@@ -908,28 +857,47 @@ def deposit():
         cursor.close()
         
         #F-string used to display the variables alongside Flash
-        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits!")
+        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them")
 
-        session["credits"] = session["credits"] + credits
+        session["credits"] = float(session["credits"]) + float(credits)
+
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET status = %s WHERE customer_id = %s", ("pending", session["customer_id"]))
+        mysql.connection.commit()
+        cursor.close()
+
+        session["status"] = "pending"
 
         return redirect(url_for("deposit"))
     
 
 @app.route('/redeemCredits')
 def redeemCredits():
-    if session["credits"] == 0:
+    
+
+    if session["credits"] == 0 or session["credits"] == 0.00 or session["credits"] == None: 
         flash("You cannot redeem any credits since you do not have any")
         return redirect(url_for("deposit"))
     
-    else:
+    elif session.get("status") == "pending":
+        flash("You cannot use your credits until they are verified")
+        return redirect(url_for("deposit"))
+    
+    elif session.get("status") == "verified" or session.get("status") != "pending":
         flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
         mysql.connection.commit()
         cursor.close()
 
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET status = '' WHERE customer_id = %s", (session["customer_id"],))
+        mysql.connection.commit()
+        cursor.close()
+
         
         session["credits"] = 0
+        session["status"] = " "
 
         return redirect(url_for("deposit"))
 
@@ -1087,3 +1055,25 @@ if __name__ == "__main__":
     app.run(debug=True) #updates in real-time + shows bugs / errors on CMD
 
 #END: CODE COMPLETED BY CHRISTIAN
+
+
+if __name__ == "__main__":
+    app.run(debug=True)  # ✅ Make sure this is at the bottom
+
+
+@app.route('/foodMarketplace')
+def foodMarketplace():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, name, image, description FROM Restaurants")
+    rows = cur.fetchall()
+    
+    # Convert tuples to dictionaries for Jinja compatibility
+    restaurants = [{"id": row[0], "name": row[1], "image": row[2], "description": row[3]} for row in rows]
+
+    cur.close()
+    
+    print("✅ RESTAURANTS LOADED:", restaurants)  # Debugging
+
+    return render_template("foodMarketplace.html", restaurants=restaurants)
+
+      
