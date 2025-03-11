@@ -124,7 +124,14 @@ def phoneNumRange(phone_number):
     return re.match(r"^\d{10}$",phone_number)
 
 
-    
+# Inject datetime so we can use it for time conversion
+@app.context_processor
+def inject_datetime():
+    return dict(datetime=datetime)
+
+@app.template_filter('strftime')
+def format_datetime(value, fmt="%H:%M"):
+    return value.strftime(fmt)
 
 
 #If the user is logged in, it will send them to their designated dashboard, otherwise the homepage
@@ -399,28 +406,34 @@ def customer():
 def driver():
     driver_id = session.get("driver_id")
     current_delivery = None
+    past_deliveries = []
     if driver_id:
         cursor = mysql.connection.cursor()
-        # Query the accepted pickup for the current driver (assumes one active delivery at a time)
+        # Query the active (accepted) pickup.
         cursor.execute(
             "SELECT * FROM Pickups WHERE driver_id = %s AND status = 'accepted' LIMIT 1",
             (driver_id,)
         )
         current_delivery = cursor.fetchone()
+        
+        # Query past (complete) deliveries.
+        cursor.execute(
+            "SELECT * FROM Pickups WHERE driver_id = %s AND status = 'completed' ORDER BY pickup_date DESC, pickup_time DESC",
+            (driver_id,)
+        )
+        past_deliveries = cursor.fetchall()
         cursor.close()
     
-    # Use the current delivery details if found, otherwise, show default values.
+    # Prepare display values.
     delivery_status = current_delivery["status"] if current_delivery else "Idle"
-    delivery_destination = "N/A"
+    delivery_destination = "N/A"  # Update if you have a destination field
     if current_delivery and current_delivery.get("pickup_time"):
-        # Assuming pickup_time is a time object, format it as a string.
-        delivery_eta = current_delivery["pickup_time"].strftime("%H:%M")
+        pickup_timedelta = current_delivery["pickup_time"]
+        # Convert timedelta to a time object (assuming it represents time since midnight)
+        pickup_time = (datetime.min + pickup_timedelta).time()
+        delivery_eta = pickup_time.strftime("%H:%M")
     else:
         delivery_eta = "N/A"
-    
-    # Fetch upcoming or past deliveries
-    upcoming_deliveries = []
-    past_deliveries = []
     
     return render_template("driver.html",
                            driver_name=session.get("full_name", "Driver"),
@@ -428,11 +441,14 @@ def driver():
                            delivery_status=delivery_status,
                            delivery_destination=delivery_destination,
                            delivery_eta=delivery_eta,
-                           upcoming_deliveries=upcoming_deliveries,
+                           current_delivery=current_delivery,  # Pass active delivery details
+                           upcoming_deliveries=[],  # If you add future deliveries, query here.
                            earnings_today=0,
                            earnings_week=0,
                            earnings_total=0,
                            past_deliveries=past_deliveries)
+
+
 
 @app.route('/foodOwner')
 def foodOwner():
@@ -703,22 +719,35 @@ def pickupRequest():
 
 @app.route('/accept-pickup/<int:pickup_id>', methods=['POST'])
 def accept_pickup(pickup_id):
-    # Ensure that only a logged-in driver can accept a pickup
-    driver_id = session.get("driver_id")
-    if not driver_id:
+    # Retrieve the phone number from the session instead of (or in addition to) driver_id.
+    phone_number = session.get("phone_number")
+    if not phone_number:
         flash("You must be logged in as a driver to accept pickups.")
         return redirect(url_for("login"))
     
+    # Query the Drivers table using the phone number to retrieve driver_id.
     cursor = mysql.connection.cursor()
-    # Update the pickup request: mark it as accepted and assign the driver_id
+    cursor.execute("SELECT driver_id FROM Drivers WHERE phone_number = %s", (phone_number,))
+    driver = cursor.fetchone()
+    if not driver:
+        flash("No driver record found for the logged in phone number.")
+        return redirect(url_for("login"))
+    
+    driver_id = driver["driver_id"]
+    # Update the session to store the driver_id so the dashboard can access it.
+    session["driver_id"] = driver_id
+    
+    # Update the pickup request with the retrieved driver_id.
     cursor.execute(
         "UPDATE Pickups SET status = 'accepted', driver_id = %s WHERE pickup_id = %s",
         (driver_id, pickup_id)
     )
     mysql.connection.commit()
     cursor.close()
+    
     flash(f"Pickup request {pickup_id} accepted!")
     return redirect(url_for('pickupRequest'))
+
 
 @app.route('/decline-pickup/<int:pickup_id>', methods=['POST'])
 def decline_pickup(pickup_id):
@@ -731,8 +760,8 @@ def decline_pickup(pickup_id):
 
 @app.route('/add-random-pickup', methods=['POST'])
 def add_random_pickup():
-    # For visual testing, we assume customer_id is 1.
-    customer_id = 1  
+    # For visual testing, we assume customer_id is 7.
+    customer_id = 7
     pickup_date = date.today()
     # Generate a random time between 10:00 and 18:00
     hour = random.randint(10, 18)
@@ -752,36 +781,36 @@ def add_random_pickup():
     flash("Random pickup request added!")
     return redirect(url_for('pickupRequest'))
 
-@app.route('/add-random-customer', methods=['POST'])
-def add_random_customer():
-    email = f"{''.join(random.choices(string.ascii_lowercase, k=8))}@example.com"
-    password = generate_password_hash("password123")
-    role = "customer"
+@app.route('/complete-delivery/<int:pickup_id>', methods=['POST'])
+def complete_delivery(pickup_id):
+    driver_id = session.get("driver_id")
+    if not driver_id:
+        flash("You must be logged in as a driver to complete deliveries.")
+        return redirect(url_for("login"))
     
     cursor = mysql.connection.cursor()
+    # Verify that the pickup belongs to this driver and is still accepted.
     cursor.execute(
-        "INSERT INTO Users (email, password, role) VALUES (%s, %s, %s)",
-        (email, password, role)
+        "SELECT * FROM Pickups WHERE pickup_id = %s AND driver_id = %s AND status = 'accepted'",
+        (pickup_id, driver_id)
     )
-    mysql.connection.commit()
-    user_id = cursor.lastrowid  # Get the inserted user_id
-
-    # Generate random customer details
-    full_name = f"Customer {user_id}"
-    phone_number = ''.join(random.choices(string.digits, k=10))
-    address = f"{random.randint(1, 999)} Main St"
-    credits = 0.00
-
-    # Insert into Customers table (customer_id should match user_id)
+    pickup = cursor.fetchone()
+    if not pickup:
+        flash("Delivery not found or already completed.")
+        cursor.close()
+        return redirect(url_for("driver"))
+    
+    # Mark the delivery as complete.
     cursor.execute(
-        "INSERT INTO Customers (customer_id, full_name, phone_number, address, credits) VALUES (%s, %s, %s, %s, %s)",
-        (user_id, full_name, phone_number, address, credits)
+        "UPDATE Pickups SET status = 'completed' WHERE pickup_id = %s",
+        (pickup_id,)
     )
     mysql.connection.commit()
     cursor.close()
     
-    flash(f"Random customer {full_name} added!")
-    return redirect(url_for('pickupRequest'))
+    flash(f"Delivery {pickup_id} marked as complete!")
+    return redirect(url_for("driver"))
+
 
 @app.route('/earningReport')
 def earningReport():

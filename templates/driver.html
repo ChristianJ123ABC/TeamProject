@@ -61,12 +61,29 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h5 class="card-title">Current Delivery</h5>
-                <p>Status: <strong>{{ delivery_status }}</strong></p>
-                <p>Destination: {{ delivery_destination }}</p>
-                <p>ETA: {{ delivery_eta }}</p>
-                <button class="btn btn-success">Mark Delivery Complete</button>
+                {% if current_delivery %}
+                    <p><strong>Pickup ID:</strong> {{ current_delivery.pickup_id }}</p>
+                    <p><strong>Pickup Date:</strong> {{ current_delivery.pickup_date }}</p>
+                    <p>
+                        <strong>Pickup Time:</strong>
+                        {% if current_delivery.pickup_time %}
+                            {{ (datetime.min + current_delivery.pickup_time).time() | strftime("%H:%M") }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                    <p><strong>Status:</strong> {{ current_delivery.status }}</p>
+                    <p><strong>Credits Earned:</strong> {{ current_delivery.credits_earned }}</p>
+                    <!-- Form to mark delivery complete -->
+                    <form action="{{ url_for('complete_delivery', pickup_id=current_delivery.pickup_id) }}" method="post">
+                        <button type="submit" class="btn btn-success">Mark Delivery Complete</button>
+                    </form>
+                {% else %}
+                    <p>No active delivery.</p>
+                {% endif %}
             </div>
         </div>
+
 
         <!-- Upcoming Deliveries -->
         <div class="card mb-3">
@@ -111,19 +128,31 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Pickup Location</th>
-                            <th>Drop-off Location</th>
-                            <th>Delivery Date</th>
+                            <th>Pickup ID</th>
+                            <th>Pickup Date</th>
+                            <th>Pickup Time</th>
+                            <th>Credits Earned</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for past_delivery in past_deliveries %}
                         <tr>
-                            <td>{{ past_delivery.pickup }}</td>
-                            <td>{{ past_delivery.dropoff }}</td>
-                            <td>{{ past_delivery.date }}</td>
-                            <td><span class="badge bg-success">Completed</span></td>
+                            <td>{{ past_delivery.pickup_id }}</td>
+                            <td>{{ past_delivery.pickup_date }}</td>
+                            <td>
+                                {% if past_delivery.pickup_time %}
+                                    {{ (datetime.min + past_delivery.pickup_time).time() | strftime("%H:%M") }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ past_delivery.credits_earned }}</td>
+                            <td><span class="badge bg-success">{{ past_delivery.status }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">No past deliveries.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
