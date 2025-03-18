@@ -95,8 +95,35 @@
             <button class="claim-offer" onclick="claimOffer()">Claim Offer</button>
         </div>
     </div>
-</section>
 
+
+    <div id="promotions" class="carousel slide" data-bs-ride="carousel">
+        <h2>Food Promotions</h2>
+        <div class="carousel-inner">
+            {% for promotion in promotions %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}"> <!-- used to loop through-->
+                    <img src="{{ url_for('static', filename = promotion.image.replace('\\', '/')) }}" class="d-block w-100" alt="Promotion Image">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5>{{ promotion.caption }}</h5>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Buttons -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#promotions" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#promotions" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <!-- Gap to put space underneath slideshow-->
+    <br><br>
+</section>
 
 <div class="more-deals">
     <a href="{{ url_for('foodMarketplace') }}" class="btn explore-btn">Browse All Deals →</a>

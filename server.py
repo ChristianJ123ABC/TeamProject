@@ -402,7 +402,10 @@ def login():
 #pages / dashboards for each role
 @app.route('/customer')
 def customer():
-    return render_template("customer.html")
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT id, image, caption FROM Promotions")
+    promotions = cursor.fetchall()
+    return render_template("customer.html", promotions=promotions)
 
 # CODE COMPLETED BY GLENN
 @app.route('/driver')
