@@ -162,15 +162,15 @@ def register():
     #displays the register page 
     if "user_id" in session:
         if(session["role"] == "customer"):
-            flash("You must log out to create another account")
+            flash("You must log out to create another account", 'error')
             return redirect(url_for("customer"))
         
         elif(session["role"] == "driver"):
-            flash("You must log out to create another account")
+            flash("You must log out to create another account", 'error')
             return redirect(url_for("driver"))
         
         elif(session["role"] == "food_owner"):
-            flash("You must log out to create another account")
+            flash("You must log out to create another account", 'error')
             return redirect(url_for("foodOwner"))
         
     if request.method == "GET":
@@ -191,15 +191,15 @@ def register():
         #validation for inputs
         
         if not emailValidation(email):
-            flash("Email is in an invalid format")
+            flash("Email is in an invalid format", 'error')
             return redirect(url_for("register"))
         
         elif email_exists(email):
-            flash("Email is already registered")
+            flash("Email is already registered", 'error')
             return redirect(url_for("register"))
         
         elif not phoneNumRange(phone_number):
-            flash("Phone number out of range")
+            flash("Phone number out of range", 'error')
             return redirect(url_for("register"))
         
 
@@ -246,7 +246,7 @@ def register():
                 )
                 return redirect(checkout_session.url, code=303)
             except stripe.error.StripeError as e:
-                flash(f"Payment failed: {str(e)}")
+                flash(f"Payment failed: {str(e)}", 'error')
                 return redirect(url_for("register"))
 
         #code end by prakash#
@@ -282,11 +282,11 @@ def register():
                        (full_name, phone_number))
             mysql.connection.commit()
         
-        flash("Account created successfully!")
+        flash("Account created successfully!", 'success')
     except Exception as e:
       logging.error(f"Error saving user data: {str(e)}")
       mysql.connection.rollback()
-      flash("An error occurred. Please try again.")
+      flash("An error occurred. Please try again.", 'error')
     finally:
               cursor.close()
         
@@ -302,15 +302,15 @@ def login():
     #displays the login page 
     if "user_id" in session:
         if(session["role"] == "customer"):
-            flash("You are already logged in")
+            flash("You are already logged in", 'warning')
             return redirect(url_for("customer"))
             
         elif(session["role"] == "driver"):
-            flash("You are already logged in")
+            flash("You are already logged in", 'warning')
             return redirect(url_for("driver"))
         
         elif(session["role"] == "food_owner"):
-            flash("You are already logged in")
+            flash("You are already logged in", 'warning')
             return redirect(url_for("foodOwner"))
         
     
@@ -331,14 +331,14 @@ def login():
 
         #Validation for inputs
         if not email or not password:
-            flash("You must type in an email AND a password")
+            flash("You must type in an email AND a password", 'error')
 
         elif not user:
-            flash("Invalid email address")
+            flash("Invalid email address", 'error')
         
         #used if you forget the user password: elif password != user["password"]
         elif not check_password_hash(user["password"],password):
-            flash("Invalid password")
+            flash("Invalid password", 'error')
 
         
             
@@ -710,7 +710,7 @@ def accept_pickup(pickup_id):
     # Retrieve the phone number from the session instead of (or in addition to) driver_id.
     phone_number = session.get("phone_number")
     if not phone_number:
-        flash("You must be logged in as a driver to accept pickups.")
+        flash("You must be logged in as a driver to accept pickups.", 'warning')
         return redirect(url_for("login"))
     
     # Query the Drivers table using the phone number to retrieve driver_id.
@@ -718,7 +718,7 @@ def accept_pickup(pickup_id):
     cursor.execute("SELECT driver_id FROM Drivers WHERE phone_number = %s", (phone_number,))
     driver = cursor.fetchone()
     if not driver:
-        flash("No driver record found for the logged in phone number.")
+        flash("No driver record found for the logged in phone number.", 'error')
         return redirect(url_for("login"))
     
     driver_id = driver["driver_id"]
@@ -742,7 +742,7 @@ def decline_pickup(pickup_id):
     cursor.execute("DELETE FROM Pickups WHERE pickup_id = %s", (pickup_id,))
     mysql.connection.commit()
     cursor.close()
-    flash(f"Pickup request {pickup_id} declined.")
+    flash(f"Pickup request {pickup_id} declined.", 'error')
     return redirect(url_for('pickupRequest'))
 
 @app.route('/add-random-pickup', methods=['POST'])
@@ -765,14 +765,14 @@ def add_random_pickup():
     )
     mysql.connection.commit()
     cursor.close()
-    flash("Random pickup request added!")
+    flash("Random pickup request added!", 'success')
     return redirect(url_for('pickupRequest'))
 
 @app.route('/complete-delivery/<int:pickup_id>', methods=['POST'])
 def complete_delivery(pickup_id):
     driver_id = session.get("driver_id")
     if not driver_id:
-        flash("You must be logged in as a driver to complete deliveries.")
+        flash("You must be logged in as a driver to complete deliveries.", 'warning')
         return redirect(url_for("login"))
     
     cursor = mysql.connection.cursor()
@@ -783,7 +783,7 @@ def complete_delivery(pickup_id):
     )
     pickup = cursor.fetchone()
     if not pickup:
-        flash("Delivery not found or already completed.")
+        flash("Delivery not found or already completed.", 'error')
         cursor.close()
         return redirect(url_for("driver"))
     
@@ -795,7 +795,7 @@ def complete_delivery(pickup_id):
     mysql.connection.commit()
     cursor.close()
     
-    flash(f"Delivery {pickup_id} marked as complete!")
+    flash(f"Delivery {pickup_id} marked as complete!", 'success')
     return redirect(url_for("driver"))
 
 @app.route('/earningReport')
@@ -813,7 +813,7 @@ def Fprofile():
 @app.route('/Subscribe')
 def subscription():
         if "user_id" not in session or session["role"] != "food_owner":
-           flash("You must be logged in as a food owner to view this page.")
+           flash("You must be logged in as a food owner to view this page.", 'warning')
            return redirect(url_for("login"))
 
         cursor = mysql.connection.cursor()
@@ -835,7 +835,7 @@ def subscription():
 def create_checkout_session_subscription():
 
     if "user_id" not in session or session["role"] != "food_owner":
-        flash("You must be logged in as a food owner to subscribe.")
+        flash("You must be logged in as a food owner to subscribe.", 'warning')
         return redirect(url_for("login"))
 
     try:
@@ -859,7 +859,7 @@ def create_checkout_session_subscription():
         return redirect(checkout_session.url, code=303)
     except Exception as e:
         logging.error(f"Error creating Stripe Checkout Session: {str(e)}")
-        flash("Payment failed. Please try again.")
+        flash("Payment failed. Please try again.", 'error')
         return redirect(url_for("subscription"))
 
 
@@ -886,7 +886,7 @@ def deposit():
     else:
         #If the input field is empty
         if not request.form.get("bottles"):
-            flash("Please enter a number of bottles before submitting")
+            flash("Please enter a number of bottles before submitting", 'error')
             return redirect(url_for("deposit"))
         
         #For every bottle, you get 10 cent
@@ -895,7 +895,7 @@ def deposit():
         cursor = mysql.connection.cursor()
         
         if(bottles > 100):
-            flash("Please enter less than 100 bottles at a time!")
+            flash("Please enter less than 100 bottles at a time!", 'warning')
             return redirect(url_for("deposit"))
         
         else:
@@ -904,7 +904,7 @@ def deposit():
             cursor.close()
             
             #F-string used to display the variables alongside Flash
-            flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them")
+            flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them", 'success')
 
             session["credits"] = float(session["credits"]) + float(credits)
 
@@ -924,15 +924,15 @@ def redeemCredits():
     
 
     if credits <= 0 or credits == 0 or credits == 0.00 or credits == None: 
-        flash("You cannot redeem any credits since you do not have any")
+        flash("You cannot redeem any credits since you do not have any", 'error')
         return redirect(url_for("deposit"))
     
     elif session.get("status") == "pending":
-        flash("You cannot use your credits until they are verified")
+        flash("You cannot use your credits until they are verified", 'error')
         return redirect(url_for("deposit"))
     
     elif session.get("status") == "verified" or session.get("status") != "pending":
-        flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days")
+        flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days", 'success')
         cursor = mysql.connection.cursor()
         cursor.execute("UPDATE Customers SET credits = 0 WHERE customer_id = %s", (session["customer_id"],))
         mysql.connection.commit()
@@ -963,7 +963,7 @@ def updateCProfile():
         address = request.form["address"]
 
         if email_exists(email) and session["email"] != email:
-            flash("Email is already registered, please try again")
+            flash("Email is already registered, please try again", 'warning')
             return redirect(url_for("updateCProfile"))
         
         cursor = mysql.connection.cursor()
@@ -974,7 +974,7 @@ def updateCProfile():
 
         #logs the user out
         session.clear()
-        flash("Profile Updated! Log back in to see updates")
+        flash("Profile Updated! Log back in to see updates", 'success')
         return redirect(url_for("login"))
 
 @app.route("/updateDProfile", methods=["GET", "POST"])
@@ -988,7 +988,7 @@ def updateDProfile():
         address = request.form["address"]
 
         if email_exists(email) and session["email"] != email:
-            flash("Email is already registered")
+            flash("Email is already registered", 'warning')
             return redirect(url_for("updateDProfile"))
 
         cursor = mysql.connection.cursor()
@@ -999,7 +999,7 @@ def updateDProfile():
 
         #logs the user out
         session.clear()
-        flash("Profile Updated! Log back in to see updates")
+        flash("Profile Updated! Log back in to see updates", 'success')
         return redirect(url_for("login"))
 
 @app.route("/updateFProfile", methods=["GET", "POST"])
@@ -1013,7 +1013,7 @@ def updateFProfile():
         address = request.form["address"]
 
         if email_exists(email) and session["email"] != email:
-            flash("Email is already registered")
+            flash("Email is already registered", 'warning')
             return redirect(url_for("updateFProfile"))
         
         cursor = mysql.connection.cursor()
@@ -1024,7 +1024,7 @@ def updateFProfile():
 
         #logs the user out
         session.clear()
-        flash("Profile Updated! Log back in to see updates")
+        flash("Profile Updated! Log back in to see updates", 'success')
         return redirect(url_for("login"))
     
 
@@ -1059,7 +1059,7 @@ def postPromotion():
                 mysql.connection.commit()
                 cursor.close()
                 
-                flash('Image uploaded successfully')
+                flash('Image uploaded successfully', 'success')
                 return redirect(url_for('postPromotion'))
 
 
