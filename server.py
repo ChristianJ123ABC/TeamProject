@@ -47,6 +47,10 @@
 #https://www.youtube.com/watch?v=YLptAhf3wwM&t=963s
 #https://www.geeksforgeeks.org/python-os-remove-method/
 
+#Flash
+#https://flask.palletsprojects.com/en/stable/patterns/flashing/
+#https://stackoverflow.com/questions/44569040/change-color-of-flask-flash-messages
+
 #Imports for functionality of the server / backend
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 from flask_mysqldb import MySQL
@@ -456,7 +460,11 @@ def driver():
 
 @app.route('/foodOwner')
 def foodOwner():
-    return render_template("foodOwner.html")
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT id, image, caption FROM Promotions")
+    promotions = cursor.fetchall()
+    return render_template("foodOwner.html", promotions=promotions)
+    
 
 
 #END: CODE COMPLETED BY CHRISTIAN
@@ -886,23 +894,28 @@ def deposit():
         credits = bottles / 10
         cursor = mysql.connection.cursor()
         
-        cursor.execute("UPDATE Customers SET credits = credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
-        mysql.connection.commit()
-        cursor.close()
+        if(bottles > 100):
+            flash("Please enter less than 100 bottles at a time!")
+            return redirect(url_for("deposit"))
         
-        #F-string used to display the variables alongside Flash
-        flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them")
+        else:
+            cursor.execute("UPDATE Customers SET credits = credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
+            mysql.connection.commit()
+            cursor.close()
+            
+            #F-string used to display the variables alongside Flash
+            flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them")
 
-        session["credits"] = float(session["credits"]) + float(credits)
+            session["credits"] = float(session["credits"]) + float(credits)
 
-        cursor = mysql.connection.cursor()
-        cursor.execute("UPDATE Customers SET status = %s WHERE customer_id = %s", ("pending", session["customer_id"]))
-        mysql.connection.commit()
-        cursor.close()
+            cursor = mysql.connection.cursor()
+            cursor.execute("UPDATE Customers SET status = %s WHERE customer_id = %s", ("pending", session["customer_id"]))
+            mysql.connection.commit()
+            cursor.close()
 
-        session["status"] = "pending"
+            session["status"] = "pending"
 
-        return redirect(url_for("deposit"))
+            return redirect(url_for("deposit"))
     
 
 @app.route('/redeemCredits')
@@ -1030,7 +1043,7 @@ def postPromotion():
         if request.method == 'POST':
             image = request.files['image']
             if image.filename == '':
-                flash('No selected file')
+                flash('No selected file', 'error')
                 return redirect(url_for('postPromotion')) 
             
             if image:

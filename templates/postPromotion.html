@@ -59,13 +59,16 @@
                 </div>
             </nav>
             <!-- used to display flash messages when called-->
-            {% with messages = get_flashed_messages()%}
-             {% if messages%}
-                {% for message in messages%}
-                <h2>{{message}}</h2>
-                 {%endfor%}
-                {%endif%}
-                {%endwith%}
+            <div class = "flash">
+                {% with messages = get_flashed_messages(with_categories = true)%}
+                {% if messages%}
+                    {% for category, message in messages%}
+                    <div class = "{{ category }}"><h2>{{message}}</h2></div>
+                    {%endfor%}
+                    {%endif%}
+                    {%endwith%}
+            </div>
+            
             <h1>Food Promotion Page</h1>
             <button class = "formButton" id = "formButton" onclick = "hideForm()">Add Promotion</button>
             
