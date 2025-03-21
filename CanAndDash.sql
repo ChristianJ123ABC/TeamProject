@@ -38,7 +38,7 @@ CREATE TABLE Drivers (
 
 -- Table for Food Owners (Extends Users)--
 CREATE TABLE FoodOwners (
-    food_owner_id INT PRIMARY KEY,
+    promoter_id INT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15),
     business_name VARCHAR(100),
@@ -61,7 +61,7 @@ CREATE TABLE Pickups (
 -- Table for Food Listings--
 CREATE TABLE FoodListings (
     food_id INT AUTO_INCREMENT PRIMARY KEY,
-    food_owner_id INT NOT NULL,
+    promoter_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
@@ -85,16 +85,15 @@ CREATE TABLE Orders (
 
 -- Table for Subscriptions--
 CREATE TABLE Subscriptions (
-    subscription_id INT AUTO_INCREMENT PRIMARY KEY,
-    food_owner_id INT NOT NULL,
-    stripe_subscription_id VARCHAR(255) NOT NULL,
-    plan_name VARCHAR(255) NOT NULL,
-    amount INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    payment_status ENUM('paid', 'unpaid') DEFAULT 'unpaid',
-    next_payment_date DATETIME NOT NULL,
-    FOREIGN KEY (food_owner_id) REFERENCES FoodOwners(food_owner_id) ON DELETE CASCADE
+    Subscription_id INT AUTO_INCREMENT PRIMARY KEY,
+    promoter_id INT NOT NULL,
+    stripe_subscription_id VARCHAR(255) NOT NULL,  -- Subscription ID from Stripe
+    subscription_start_date DATETIME NOT NULL,     -- Start date of subscription
+    subscription_end_date DATETIME NOT NULL,       -- End date of subscription
+    next_due_date DATETIME NOT NULL,               -- Next payment due date
+    price DECIMAL(10, 2) NOT NULL,                 -- Subscription price
+    status ENUM('active', 'canceled', 'incomplete') DEFAULT 'active',    -- Subscription status
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 );
 
 

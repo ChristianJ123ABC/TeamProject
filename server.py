@@ -57,7 +57,7 @@ from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, redirect, request, render_template
 from flask import request, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import date
 import re
 import stripe
@@ -539,25 +539,34 @@ def stripe_webhook():
         # Handle subscription renewal for food owners
         invoice = event["data"]["object"]
         stripe_subscription_id = invoice["subscription"]
+
+        #Retrive subscription detail from stripe
         subscription = stripe.Subscription.retrieve(stripe_subscription_id)
 
         # Extract subscription details
-        plan_name = subscription["plan"]["nickname"]
-        amount = subscription["plan"]["amount"]
+        
+        price = subscription["plan"]["amount"] / 100  #convert cent to dollars
         start_date = datetime.fromtimestamp(subscription["current_period_start"])
         end_date = datetime.fromtimestamp(subscription["current_period_end"])
-        next_payment_date = datetime.fromtimestamp(subscription["current_period_end"])
+        next_due_date = datetime.fromtimestamp(subscription["current_period_end"])
 
 
        # Log the subscription details
-        logging.info(f"Subscription details: plan_name={plan_name}, amount={amount}, start_date={start_date}, end_date={end_date}, next_payment_date={next_payment_date}")
+        logging.info(f"Subscription details: price={price}, start_date={start_date}, end_date={end_date}, next_due_date={next_due_date}, price={price}")
         
-        # Save subscription details to the database
+        # update subscription details to the database
         cursor = mysql.connection.cursor()
 
         try:
-            cursor.execute("INSERT INTO Subscriptions (food_owner_id, stripe_subscription_id, plan_name, amount, payment_status, start_date, end_date, next_payment_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                           (metadata.get("user_id"), stripe_subscription_id, plan_name, amount, "active", start_date, end_date, next_payment_date))
+            cursor.execute("""
+                UPDATE Subscriptions
+                SET subscription_start_date = %s,
+                    subscription_end_date = %s,
+                    next_due_date = %s,
+                    price = %s,
+                    status = 'active'
+                WHERE stripe_subscription_id = %s
+            """, (start_date, end_date, next_due_date, price, stripe_subscription_id))
             mysql.connection.commit()
             logging.info(f"Subscription {stripe_subscription_id} updated successfully.")
         except Exception as e:
@@ -625,7 +634,7 @@ def add_to_cart():
 @app.route('/get_cart')
 def get_cart():
     cart_data = session.get('cart', [])
-    print("📦 Fetching Cart from Session:", cart_data)  # 🔍 Debugging
+    print(" Fetching Cart from Session:", cart_data)  #  Debugging
     return jsonify({"cart": cart_data})
 
 
@@ -652,8 +661,8 @@ def create_checkout_session():
         # Deduct from session credits
         user_credit -= total_amount
         session.pop('cart', None)  # Clear cart
-        session.modified = True  # ✅ Ensure session updates properly
-        flash("✅ Payment Successful! Paid using credits.", "success")
+        session.modified = True  #  Ensure session updates properly
+        flash(" Payment Successful! Paid using credits.", "success")
         return redirect(url_for('payment_success'))
 
     remaining_amount = total_amount - user_credit
@@ -812,19 +821,27 @@ def Fprofile():
 # Subscription Page
 @app.route('/Subscribe')
 def subscription():
+        
+        ##check if the user is logged in and has the correct role
         if "user_id" not in session or session["role"] != "food_owner":
            flash("You must be logged in as a food owner to view this page.", 'warning')
            return redirect(url_for("login"))
 
+
+        #Fetch subscription data from the database
         cursor = mysql.connection.cursor()
         try:
-            cursor.execute("SELECT * FROM Subscriptions WHERE user_id = %s", (session["user_id"],))
-            subscriptions = cursor.fetchall()
+            cursor.execute("""
+            SELECT subscription_id, price, status, subscription_start_date, subscription_end_date, next_due_date
+            FROM Subscriptions
+            WHERE promoter_id = %s
+        """, (session["user_id"],)) #Fetch subscription for the logged-in user
+            subscriptions = cursor.fetchall() # Get all rows as list of tuples
         except Exception as e:
              logging.error(f"Error fetching subscription data: {str(e)}")
-             subscriptions = []
+             subscriptions = [] #If there's an error , return an empty list
         finally:
-             cursor.close()
+             cursor.close() #Close the database cursor
 
         return render_template("subscription.html", subscriptions=subscriptions)
   #  return render_template("subscription.html") # Subscription payment page
@@ -851,11 +868,29 @@ def create_checkout_session_subscription():
             success_url=f"{YOUR_DOMAIN}/success",
             cancel_url=f"{YOUR_DOMAIN}/cancel",
             metadata={
-                "user_id": session["user_id"],  # Pass the logged-in user's ID
+                "promoter_id": session["user_id"],  # Pass the logged-in user's ID
                 "email": session["email"],      # Pass the logged-in user's email
                 "role": session["role"],        # Pass the logged-in user's role
             },
         )
+
+        # Store subscription details in the database
+        cursor = mysql.connection.cursor()
+        cursor.execute("""
+            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, price, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            session["user_id"],
+            checkout_session.subscription,  # Stripe subscription ID
+            datetime.now(),  # Subscription start date
+            datetime.now() + timedelta(days=30),  # Subscription end date (30 days from now)
+            datetime.now() + timedelta(days=30),  # Next due date (30 days from now)
+            20.00, #Subscription price
+            "active"
+        ))
+        mysql.connection.commit()
+        cursor.close()
+
         return redirect(checkout_session.url, code=303)
     except Exception as e:
         logging.error(f"Error creating Stripe Checkout Session: {str(e)}")

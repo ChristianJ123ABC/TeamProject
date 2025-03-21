@@ -41,28 +41,30 @@
         </div>
     </nav>
 
+
+    <!--Receiving the subscription data passed from flask route and rendering data in table format-->
     <div class="container mt-5">
         <h1>My Subscriptions</h1>
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Plan Name</th>
-                    <th>Amount</th>
+                    <th>Subscription ID</th>
+                    <th>Price</th>
                     <th>Status</th>
                     <th>Start Date</th>
                     <th>End Date</th>
-                    <th>Next Payment Date</th>
+                    <th>Next Due Date</th>
                 </tr>
             </thead>
             <tbody>
                 {% for subscription in subscriptions %}
                 <tr>
-                    <td>{{ subscription.plan_name }}</td>
-                    <td>${{ subscription.amount / 100 }}</td>
-                    <td>{{ subscription.payment_status }}</td>
+                    <td>${{ subscription.stripe_subscription_id }}</td>
+                    <td>${{ subscription.price }}</td>
+                    <td>{{ subscription.status }}</td>
                     <td>{{ subscription.start_date }}</td>
                     <td>{{ subscription.end_date }}</td>
-                    <td>{{ subscription.next_payment_date }}</td>
+                    <td>{{ subscription.next_due_date }}</td>
                 </tr>
                 {% else %}
                 <tr>
