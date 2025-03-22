@@ -85,15 +85,14 @@ CREATE TABLE Orders (
 
 -- Table for Subscriptions--
 CREATE TABLE Subscriptions (
-    Subscription_id INT AUTO_INCREMENT PRIMARY KEY,
+    subscription_id INT AUTO_INCREMENT PRIMARY KEY,
     promoter_id INT NOT NULL,
-    stripe_subscription_id VARCHAR(255) NOT NULL,  -- Subscription ID from Stripe
-    subscription_start_date DATETIME NOT NULL,     -- Start date of subscription
-    subscription_end_date DATETIME NOT NULL,       -- End date of subscription
-    next_due_date DATETIME NOT NULL,               -- Next payment due date
-    price DECIMAL(10, 2) NOT NULL,                 -- Subscription price
-    status ENUM('active', 'canceled', 'incomplete') DEFAULT 'active',    -- Subscription status
-    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+    stripe_subscription_id VARCHAR(255) NOT NULL,
+    subscription_start_date DATETIME NOT NULL,
+    subscription_end_date DATETIME NOT NULL,
+    next_due_date DATETIME NOT NULL,
+    status ENUM('active', 'canceled', 'incomplete') DEFAULT 'active',
+    FOREIGN KEY (promoter_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 

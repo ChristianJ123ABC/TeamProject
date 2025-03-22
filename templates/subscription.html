@@ -45,42 +45,44 @@
     <!--Receiving the subscription data passed from flask route and rendering data in table format-->
     <div class="container mt-5">
         <h1>My Subscriptions</h1>
+        {% if subscriptions %}
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th>Subscription ID</th>
-                    <th>Price</th>
-                    <th>Status</th>
+                    <th>Stripe Subscription ID</th>
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Next Due Date</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for subscription in subscriptions %}
                 <tr>
+                    <td>${{ subscription.subscription_id }}</td>
                     <td>${{ subscription.stripe_subscription_id }}</td>
-                    <td>${{ subscription.price }}</td>
-                    <td>{{ subscription.status }}</td>
-                    <td>{{ subscription.start_date }}</td>
-                    <td>{{ subscription.end_date }}</td>
+                    <td>{{ subscription.subscription_start_date }}</td>
+                    <td>{{ subscription.subscription_end_date }}</td>
                     <td>{{ subscription.next_due_date }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center">No subscriptions found.</td>
+                    <td>{{ subscription.status }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    {% else %}
+        <p class="text-center">No subscriptions found.</p>
+    {% endif %}
+</div>
 
+<!-- Subscribe Button -->
+<div class="container mt-5">
     <h1>Subscribe to Our Premium Plan</h1>
     <p>Get full access for $20/month.</p>
-    
-    <form action="/create-checkout-session-subscription" method="POST">
-        <button type="submit">Subscribe Now</button>
+    <form action="{{ url_for('create_checkout_session_subscription') }}" method="POST">
+        <button type="submit" class="btn btn-primary">Subscribe Now</button>
     </form>
+</div>
     
     <br>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

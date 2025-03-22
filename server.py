@@ -545,14 +545,13 @@ def stripe_webhook():
 
         # Extract subscription details
         
-        price = subscription["plan"]["amount"] / 100  #convert cent to dollars
         start_date = datetime.fromtimestamp(subscription["current_period_start"])
         end_date = datetime.fromtimestamp(subscription["current_period_end"])
         next_due_date = datetime.fromtimestamp(subscription["current_period_end"])
 
 
        # Log the subscription details
-        logging.info(f"Subscription details: price={price}, start_date={start_date}, end_date={end_date}, next_due_date={next_due_date}, price={price}")
+        logging.info(f"Subscription details: start_date={start_date}, end_date={end_date}, next_due_date={next_due_date}")
         
         # update subscription details to the database
         cursor = mysql.connection.cursor()
@@ -563,10 +562,9 @@ def stripe_webhook():
                 SET subscription_start_date = %s,
                     subscription_end_date = %s,
                     next_due_date = %s,
-                    price = %s,
                     status = 'active'
                 WHERE stripe_subscription_id = %s
-            """, (start_date, end_date, next_due_date, price, stripe_subscription_id))
+            """, (start_date, end_date, next_due_date, stripe_subscription_id))
             mysql.connection.commit()
             logging.info(f"Subscription {stripe_subscription_id} updated successfully.")
         except Exception as e:
@@ -832,7 +830,7 @@ def subscription():
         cursor = mysql.connection.cursor()
         try:
             cursor.execute("""
-            SELECT subscription_id, price, status, subscription_start_date, subscription_end_date, next_due_date
+            SELECT subscription_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, status
             FROM Subscriptions
             WHERE promoter_id = %s
         """, (session["user_id"],)) #Fetch subscription for the logged-in user
@@ -877,15 +875,15 @@ def create_checkout_session_subscription():
         # Store subscription details in the database
         cursor = mysql.connection.cursor()
         cursor.execute("""
-            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, price, status)
+            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, status)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             session["user_id"],
-            checkout_session.subscription,  # Stripe subscription ID
+            checkout_session.id,  # Stripe checkout session ID
             datetime.now(),  # Subscription start date
             datetime.now() + timedelta(days=30),  # Subscription end date (30 days from now)
             datetime.now() + timedelta(days=30),  # Next due date (30 days from now)
-            20.00, #Subscription price
+           
             "active"
         ))
         mysql.connection.commit()
