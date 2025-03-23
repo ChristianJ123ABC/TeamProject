@@ -10,44 +10,47 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     
- 
+             
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
              <link rel="stylesheet" href="../static/style.css">
             <title> Customer Page </title>
         </head>
         <body>
-            <!-- nav bar-->
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div class="container">
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
                
-                    <a class="navbar-brand logo" href="{{ url_for('customer') }}">Customer Dashboard</a>
-            
-                
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-            
-                
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('schedulePickup') }}">Schedule Pickup</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('foodMarketplace') }}">Food Marketplace</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('Cprofile') }}">Profile</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('deposit') }}">Deposit Bottles</a></li>
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center" href="{{url_for('Cpayment') }}">
-                                </a>
-                            </li>
-                        </ul>
-            
-                     
-                        <div class="d-flex align-items-center">
-                            <a href="{{url_for('Cpayment') }}" class="nav-link basket-icon me-3">🛒</a>
-                            <a href="{{ url_for('logout') }}" class="btn logout me-2">Log Out</a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+                <li class="nav-item me-3">
+                    <a class="nav-link" href="{{ url_for('foodMarketplace') }}">
+                        <i class="fa-solid fa-utensils me-1"></i> Food Marketplace
+                    </a>
+                </li>
+                <li class="nav-item me-3">
+                    <a class="nav-link" href="{{ url_for('deposit') }}">
+                        <i class="fa-solid fa-bottle-water me-1"></i> Deposit Bottles
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('Cpayment') }}" class="nav-link basket-icon me-3">🛒</a>
+                <a class="nav-link profile-link me-3" href="{{ url_for('Cprofile') }}">
+                    <i class="fa-solid fa-user"></i>
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn logout me-3">Log Out</a>
+            </div>
+        </div>
+    </div>
+</nav>
+>
             <!-- START: CODE FINISHED BY CHRISTIAN -->
             <!-- used to display flash messages when called-->
             <div class = "flash">

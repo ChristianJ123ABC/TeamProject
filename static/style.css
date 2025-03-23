@@ -1,4 +1,5 @@
 
+/*start code by Abdallah*/
 .home-container {
     font-family: Arial, sans-serif;
     color: #333;
@@ -276,6 +277,23 @@
 .login:hover, .signup:hover {
     opacity: 0.8;
 }
+
+.navbar-nav .nav-link i.fa-bottle-water {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important; 
+    color: #83b0f3 !important;   
+    font-size: 24px !important;  
+}
+
+.profile-link i.fa-user {
+    color: #fff !important;
+    font-size: 24px !important; 
+  }
+  
+  .profile-link:hover i.fa-user {
+    color: #f39c12 !important; 
+  }
+
 .profile-container {
     text-align: center;
     margin-top: 120px;
@@ -566,8 +584,18 @@
     display: none; /
 }
 
+
+/* completed by abdullah */
+
+
+
+
+
+
+
+
 /*
- START: COMPLETED BY CHRISTIAN
+ START:  BY CHRISTIAN
 */
 /*
 SOURCES:
@@ -692,7 +720,7 @@ h1, .upload h3{
 END: COMPLETED BY CHRISTIAN
 */
 
-
+/*start code by Abdallah*/
 .card {
     border-radius: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -721,7 +749,7 @@ END: COMPLETED BY CHRISTIAN
 
 .restaurant-card {
     display: flex;
-    flex-wrap: wrap; /* Allows multiple cards to align properly */
+    flex-wrap: wrap; 
     justify-content: center;
     align-items: center;
     gap: 15px; /* Adds space between cards */
@@ -736,13 +764,19 @@ END: COMPLETED BY CHRISTIAN
 }
 
 .card img {
-    height: 200px; /* Ensure image is uniform */
+    height: 200px; 
     object-fit: cover;
 }
 
 .card-body {
     text-align: center;
 }
+
+/* completed by abdullah */
+
+
+
+
 
 /*
  START: COMPLETED BY CHRISTIAN
@@ -781,3 +815,109 @@ END: COMPLETED BY CHRISTIAN
 /*
  END: COMPLETED BY CHRISTIAN
 */
+
+
+
+/*start code by Abdallah*/
+
+.nav-link .profile-link {
+    font-size: 40px;
+    color: #0a0000; 
+    text-decoration: none; 
+    padding: 5px;
+}
+
+.profile-link:hover {
+    color: #FF6600; 
+}
+
+/* Cancelled Payment Page Styles started by Abdallah */
+.cancelled-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 40px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+  }
+  
+  .cancelled-icon {
+    font-size: 4rem;
+    color: #dc3545;
+    margin-bottom: 20px;
+  }
+  
+  .cancelled-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #dc3545;
+  }
+  
+  .cancelled-container p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .cancelled-btn {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  .cancelled-btn:hover {
+    background-color: #c82333;
+  }
+
+/* completed by abdullah */
+
+
+
+  /* Success Payment Page Styles started  by abdullah */
+.success-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 40px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+  }
+  
+  .success-icon {
+    font-size: 4rem;
+    color: #28a745;
+    margin-bottom: 20px;
+  }
+  
+  .success-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #28a745;
+  }
+  
+  .success-container p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .success-btn {
+    background-color: #28a745;
+    color: #fff;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  .success-btn:hover {
+    background-color: #218838;
+  }
+  /* completed by abdullah */
