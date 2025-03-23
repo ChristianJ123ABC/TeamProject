@@ -635,56 +635,68 @@ def get_cart():
     print(" Fetching Cart from Session:", cart_data)  #  Debugging
     return jsonify({"cart": cart_data})
 
+# Remove item from cart
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    item_name = request.json.get("name")
+    session['cart'] = [item for item in session.get('cart', []) if item['name'] != item_name]
+    session.modified = True
+    return jsonify({"message": f"{item_name} removed from cart!", "cart": session['cart']})
+
 
 # Get User Credits (from session,)
 @app.route('/get_user_credit')
 def get_user_credit():
     return jsonify({"credit": session.get("credits", 0)})
 
-#  Checkout with Credits & Stripe
+# Checkout with Credits & Stripe
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
-    user_credit = float(session.get("credits", 0))  # Fetch from session
+    user_credit = float(session.get("credits", 0))  # Fetch user credits
     cart = session.get('cart', [])
-
+    
     if not cart:
         flash("Your cart is empty. Add items before checking out.", "warning")
         return redirect(url_for('Cpayment'))
 
-    total_price = sum(item['price'] for item in cart)
-    delivery_fee = 2 if request.form.get('delivery') else 0
+    total_price = sum(float(item['price']) for item in cart)
+    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
+    use_credits = request.form.get('use_credits') == 'yes'
     total_amount = total_price + delivery_fee
+    
+    if use_credits and user_credit > 0:
+        if user_credit >= total_amount:
+            user_credit -= total_amount  # Deduct only from credits
+            session["credits"] = user_credit
+            session.pop('cart', None)  # Clear cart
+            session.modified = True
+            flash("Payment Successful! Paid using credits.", "success")
+            return redirect(url_for('payment_success'))
+        else:
+            remaining_amount = total_amount - user_credit
+            session["credits"] = 0  # Deduct all credits
+    else:
+        remaining_amount = total_amount  # Pay full amount via Stripe
 
-    if user_credit >= total_amount:
-        # Deduct from session credits
-        user_credit -= total_amount
-        session.pop('cart', None)  # Clear cart
-        session.modified = True  #  Ensure session updates properly
-        flash(" Payment Successful! Paid using credits.", "success")
-        return redirect(url_for('payment_success'))
+    if remaining_amount > 0:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'eur',
+                    'product_data': {'name': 'Food Order'},
+                    'unit_amount': int(remaining_amount * 100),  # Convert to cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=url_for('payment_success', _external=True),
+            cancel_url=url_for('Cpayment', _external=True),
+        )
+        return redirect(checkout_session.url, code=303)
 
-    remaining_amount = total_amount - user_credit
-
-    # Deduct all user credits from session before processing Stripe payment
-    session["credits"] = 0
-    session.modified = True
-
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
-            'price_data': {
-                'currency': 'eur',
-                'product_data': {'name': 'Food Order'},
-                'unit_amount': int(remaining_amount * 100),  # Convert to cents
-            },
-            'quantity': 1,
-        }],
-        mode='payment',
-        success_url=url_for('payment_success', _external=True),
-        cancel_url=url_for('Cpayment', _external=True),
-    )
-
-    return redirect(checkout_session.url, code=303)
+    flash("Payment Successful! No additional payment required.", "success")
+    return redirect(url_for('payment_success'))
 
 @app.route('/payment_success')
 def payment_success():
