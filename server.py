@@ -70,6 +70,8 @@ import random, string
 
 
 
+
+
 #app = Flask(__name__, static_url_path="", static_folder="public")
 
 # Stripe API Keys 
@@ -128,6 +130,26 @@ def email_exists(email):
 
 def phoneNumRange(phone_number):
     return re.match(r"^\d{10}$",phone_number)
+
+
+
+
+
+@app.template_filter('from_json')
+def from_json_filter(value):
+    try:
+        return json.loads(value)
+    except Exception as e:
+        # Optionally log e for debugging
+        return []  # Return an empty list if parsing fails
+
+
+@app.template_filter('from_json')
+def from_json_filter(value):
+    try:
+        return json.loads(value)
+    except Exception:
+        return {}
 
 
 # Inject datetime so we can use it for time conversion
@@ -581,7 +603,25 @@ def stripe_webhook():
 
 @app.route('/Cprofile', methods=["GET", "POST"])
 def Cprofile():
-    return render_template("Cprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM Orders WHERE customer_id = %s ORDER BY order_date DESC", (session["customer_id"],))
+    orders = cursor.fetchall()
+    cursor.close()
+
+   
+    for order in orders:
+        try:
+            order['items_parsed'] = json.loads(order['items'])
+        except Exception as e:
+            print("Error parsing order items:", e)
+            order['items_parsed'] = []  
+
+    return render_template("Cprofile.html",
+                           full_name=session["full_name"],
+                           email=session["email"],
+                           phone_number=session["phone_number"],
+                           address=session["address"],
+                           orders=orders)
 
 @app.route('/schedulePickup')
 def schedulePickup():
@@ -644,32 +684,44 @@ def remove_from_cart():
     return jsonify({"message": f"{item_name} removed from cart!", "cart": session['cart']})
 
 
-# Get User Credits (from session,)
+# Gets User Credits (from session,)
 @app.route('/get_user_credit')
 def get_user_credit():
     return jsonify({"credit": session.get("credits", 0)})
 
-# Checkout with Credits & Stripe for customer
+
+def save_order_to_db(cart, total_amount, customer_id, mysql):
+    cursor = mysql.connection.cursor()
+    items = json.dumps(cart)  
+    cursor.execute("INSERT INTO Orders (customer_id, items, total_amount) VALUES (%s, %s, %s)",
+                   (customer_id, items, total_amount))
+    mysql.connection.commit()
+    cursor.close()
+
+
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
-    user_credit = float(session.get("credits", 0))  # Fetch user credits
+    user_credit = float(session.get("credits", 0))
     cart = session.get('cart', [])
-    
-    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
-    use_credits = request.form.get('use_credits') == 'yes'
     
     if not cart:
         flash("Your cart is empty. Add items before checking out.", "warning")
         return redirect(url_for('Cpayment'))
-
+    
+    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
+    use_credits = request.form.get('use_credits') == 'yes'
+    
     total_price = sum(float(item['price']) for item in cart)
     total_amount = total_price + delivery_fee
-    
+
     if use_credits and user_credit > 0:
         if user_credit >= total_amount:
-            user_credit -= total_amount  # Deduct only from credits
+            # Payment fully by credits
+            user_credit -= total_amount
             session["credits"] = user_credit
-            session.pop('cart', None)  # Clear cart
+            # Save order before clearing the cart
+            save_order_to_db(cart, total_amount, session["customer_id"], mysql)
+            session.pop('cart', None)
             session.modified = True
             flash("Payment Successful! Paid using credits.", "success")
             return redirect(url_for('payment_success'))
@@ -677,8 +729,9 @@ def create_checkout_session():
             remaining_amount = total_amount - user_credit
             session["credits"] = 0  # Deduct all credits
     else:
-        remaining_amount = total_amount  # Pay full amount via Stripe
+        remaining_amount = total_amount
 
+    # If remaining amount > 0, process with Stripe
     if remaining_amount > 0:
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -686,7 +739,7 @@ def create_checkout_session():
                 'price_data': {
                     'currency': 'eur',
                     'product_data': {'name': 'Food Order'},
-                    'unit_amount': int(remaining_amount * 100),  # Convert to cents
+                    'unit_amount': int(remaining_amount * 100),
                 },
                 'quantity': 1,
             }],
@@ -694,19 +747,29 @@ def create_checkout_session():
             success_url=url_for('payment_success', _external=True),
             cancel_url=url_for('Cpayment', _external=True),
         )
+        #  
         return redirect(checkout_session.url, code=303)
 
+    
+    save_order_to_db(cart, total_amount, session["customer_id"], mysql)
+    session.pop('cart', None)
+    session.modified = True
     flash("Payment Successful! No additional payment required.", "success")
     return redirect(url_for('payment_success'))
 
 @app.route('/payment_success')
 def payment_success():
-    session.pop('cart', None)  # Clear cart after successful payment
-    session.modified = True
-    flash(" Payment Successful!", "success")
+    
+    cart = session.get('cart')
+    if cart:
+        total_price = sum(float(item['price']) for item in cart)
+      
+        total_amount = total_price
+        save_order_to_db(cart, total_amount, session["customer_id"], mysql)
+        session.pop('cart', None)
+        session.modified = True
+    flash("Payment Successful!", "success")
     return redirect(url_for('customer'))
-
-
 
 
 @app.route('/Dprofile', methods=["GET", "POST"])
