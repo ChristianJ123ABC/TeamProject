@@ -37,11 +37,11 @@ const images = [
       }
      
     
-      console.log("✅ script.js is linked and running!");
+      console.log(" script.js is linked and running!");
 
-      // 🛒 Function to add an item to cart
+      // Function to add an item to cart
       async function addToCart(name, price) {
-          console.log(`🛒 Adding to cart: ${name} - €${price}`);
+          console.log(` Adding to cart: ${name} - €${price}`);
       
           try {
               const response = await fetch('/add_to_cart', {
@@ -51,78 +51,183 @@ const images = [
               });
       
               const data = await response.json();
-              console.log("✅ Cart Response:", data);
+              console.log(" Cart Response:", data);
       
               alert(`${name} added to cart!`);
-              await loadCart(); // 🔥 Forces the cart to update after adding
+              await loadCart(); // Forces the cart to update after adding
           } catch (error) {
-              console.error("❌ Error adding to cart:", error);
+              console.error(" Error adding to cart:", error);
           }
       }
       
-      // 🛍️ Function to load the cart on the checkout page
+
+      //  Function to load the cart on the checkout page
       async function loadCart() {
-          console.log("🔄 Fetching cart data...");
+        console.log(" Fetching cart data...");
+        try {
+            const response = await fetch('/get_cart');
+            const data = await response.json();
+
+            const cartList = document.getElementById('cart-items');
+            const totalPriceElem = document.getElementById('total-price');
+
+            cartList.innerHTML = "";
+            let totalPrice = 0;
+
+            if (data.cart.length === 0) {
+                cartList.innerHTML = "<p>No items in cart.</p>";
+            } else {
+                let itemCounts = {};
+                data.cart.forEach(item => {
+                    if (!itemCounts[item.name]) {
+                        itemCounts[item.name] = { price: item.price, quantity: 1 };
+                    } else {
+                        itemCounts[item.name].quantity += 1;
+                    }
+                });
+    
+                Object.keys(itemCounts).forEach(name => {
+                    let item = itemCounts[name];
+                    const listItem = document.createElement('li');
+                    listItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+    
+                    listItem.innerHTML = `
+                        ${name} (x${item.quantity}) - €${(item.price * item.quantity).toFixed(2)}
+                        <button class="btn btn-sm btn-danger" onclick="removeFromCart('${name}')">Remove</button>
+                    `;
+    
+                    cartList.appendChild(listItem);
+                    totalPrice += item.price * item.quantity;
+                });
+            }
+    
+            totalPriceElem.textContent = totalPrice.toFixed(2);
+            updateTotal();
+        } catch (error) {
+            console.error(" Error loading cart:", error);
+        }
+    }
+
+    // Start Code Prakash
+
+    //  Remove item from cart
+    async function removeFromCart(itemName) {
+        try {
+            const response = await fetch('/remove_from_cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: itemName })
+            });
+
+            const data = await response.json();
+            console.log(" Removed:", data);
+            loadCart(); // Reload the cart
+        } catch (error) {
+            console.error(" Error removing item:", error);
+        }
+    }
+
       
-          try {
-              const response = await fetch('/get_cart');
-              const data = await response.json();
-              console.log("✅ Loaded Cart Data:", data);
-      
-              const cartList = document.getElementById('cart-items');
-              const totalPriceElem = document.getElementById('total-price');
-      
-              if (!cartList || !totalPriceElem) {
-                  console.warn("⚠️ Cart elements not found in the DOM.");
-                  return;
-              }
-      
-              cartList.innerHTML = "";
-              let totalPrice = 0;
-      
-              if (data.cart.length === 0) {
-                  cartList.innerHTML = "<p>No items in cart.</p>";
-              } else {
-                  data.cart.forEach(item => {
-                      const listItem = document.createElement('li');
-                      listItem.textContent = `${item.name} - €${item.price}`;
-                      cartList.appendChild(listItem);
-                      totalPrice += item.price;
-                  });
-              }
-      
-              totalPriceElem.textContent = totalPrice.toFixed(2);
-              updateTotal();
-          } catch (error) {
-              console.error("❌ Error loading cart:", error);
-          }
-      }
-      
-      // 💳 Load user credits
+      //  Load user credits
       async function loadCredits() {
-          try {
-              const response = await fetch('/get_user_credit');
-              const data = await response.json();
-              document.getElementById('user-credit').textContent = data.credit;
-          } catch (error) {
-              console.error("❌ Error loading credits:", error);
-          }
-      }
+        try {
+            const response = await fetch('/get_user_credit');
+            const data = await response.json();
+            document.getElementById('user-credit').textContent = parseFloat(data.credit).toFixed(2);
+            updateTotal();
+        } catch (error) {
+            console.error(" Error loading credits:", error);
+        }
+    }
       
-      // 🏷️ Update total payment amount
-      function updateTotal() {
-          let total = parseFloat(document.getElementById('total-price').textContent) || 0;
-          let deliveryFee = document.getElementById('delivery').checked ? 2 : 0;
-          let userCredit = parseFloat(document.getElementById('user-credit').textContent) || 0;
-          let finalAmount = Math.max(0, total + deliveryFee - userCredit);
+    // Update total payment amount
+    function updateTotal() {
+        let total = parseFloat(document.getElementById('total-price').textContent) || 0;
+        let deliveryFeeChecked = document.getElementById('delivery').checked;
+        let deliveryFee = deliveryFeeChecked ? 2 : 0;
+        let useCredits = document.getElementById('use-credits').checked;
+        let userCredit = parseFloat(document.getElementById('user-credit').textContent) || 0;
+
+        let finalAmount = total + deliveryFee; // Base price including delivery
+        if (useCredits) {
+            finalAmount = Math.max(0, finalAmount - userCredit); // Deduct user credits if checked
+        }
+
+        document.getElementById('final-amount').textContent = finalAmount.toFixed(2);
+
+        // Update hidden delivery field for form submission
+        document.getElementById('delivery-hidden').value = deliveryFeeChecked ? "yes" : "no";
+    }
+
+        // Checkout Process
+    async function checkout() {
+        let useCredits = document.getElementById('use-credits').checked;
+        let deliveryFeeChecked = document.getElementById('delivery').checked;
+        
+        if (!deliveryFeeChecked) {
+            alert("Please select the delivery fee option to proceed.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/create-checkout-session-one-time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ use_credits: useCredits, delivery: "yes" }) // Ensure delivery is always "yes"
+            });
+
+            const data = await response.json();
+
+            if (data.url) {
+                window.location.href = data.url; // Redirect to Stripe payment
+            } else if (data.message) {
+                alert(data.message); // Show success message (if paid via credits)
+                window.location.reload(); // Refresh page
+            } else {
+                alert("Error processing payment!");
+                console.error("Payment Error:", data);
+            }
+        } catch (error) {
+            console.error("Error during checkout:", error);
+            alert("An error occurred. Please try again.");
+        }
+    }
+
+        // Initialize checkout page
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("Initializing checkout page...");
+            loadCart();
+            loadCredits();
+
+            //Attach event listners
+            document.getElementById('delivery').addEventListener("change", updateTotal);
+            document.getElementById('use-credits').addEventListener("change", updateTotal);
+
+            // Select the form explicitly and prevent submission if delivery is unchecked
+            const checkoutForm = document.querySelector("form");
+
+            checkoutForm.addEventListener("submit", function (event) {
+                let deliveryCheckbox = document.getElementById('delivery');
+
+                if (!deliveryCheckbox.checked) {
+                    event.preventDefault(); // Stop form submission
+                    alert("Please select the 'Include Delivery' option to proceed!");
+                } else {
+                    document.getElementById('delivery-hidden').value = "yes"; // Ensure delivery fee is passed
+                }
+            });
+
+            updateTotal(); // Ensure values update on page load
+
+                });
       
-          document.getElementById('final-amount').textContent = finalAmount.toFixed(2);
-          document.getElementById('delivery-hidden').value = deliveryFee;
-      }
+        //End Code Prakash
+
+
       
-      // ✅ Ensure "Add" buttons work even after page load
+      //  Ensure "Add" buttons work even after page load
       document.addEventListener("DOMContentLoaded", function () {
-          console.log("🔄 Initializing cart and credits...");
+          console.log(" Initializing cart and credits...");
       
           loadCart();
           loadCredits();
@@ -136,13 +241,5 @@ const images = [
                   addToCart(mealName, mealPrice);
               });
           });
-      });
-      
-      // 🛍️ Auto-load cart when navigating to checkout page
-      document.addEventListener("DOMContentLoaded", async function () {
-          console.log("🔄 Fetching cart data...");
-          
-          await loadCart(); // 🔥 Forces the cart to load on page load
-          loadCredits(); // ⬅️ Load user credits too
       });
       

@@ -649,19 +649,20 @@ def remove_from_cart():
 def get_user_credit():
     return jsonify({"credit": session.get("credits", 0)})
 
-# Checkout with Credits & Stripe
+# Checkout with Credits & Stripe for customer
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
     user_credit = float(session.get("credits", 0))  # Fetch user credits
     cart = session.get('cart', [])
+    
+    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
+    use_credits = request.form.get('use_credits') == 'yes'
     
     if not cart:
         flash("Your cart is empty. Add items before checking out.", "warning")
         return redirect(url_for('Cpayment'))
 
     total_price = sum(float(item['price']) for item in cart)
-    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
-    use_credits = request.form.get('use_credits') == 'yes'
     total_amount = total_price + delivery_fee
     
     if use_credits and user_credit > 0:
@@ -702,7 +703,7 @@ def create_checkout_session():
 def payment_success():
     session.pop('cart', None)  # Clear cart after successful payment
     session.modified = True
-    flash("✅ Payment Successful!", "success")
+    flash(" Payment Successful!", "success")
     return redirect(url_for('customer'))
 
 
