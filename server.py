@@ -1250,10 +1250,6 @@ if __name__ == "__main__":
 #END: CODE COMPLETED BY CHRISTIAN
 
 
-if __name__ == "__main__":
-    app.run(debug=True)  # ✅ Make sure this is at the bottom
-
-
 @app.route('/foodMarketplace')
 def foodMarketplace():
     cur = mysql.connection.cursor()
@@ -1268,5 +1264,8 @@ def foodMarketplace():
     print("✅ RESTAURANTS LOADED:", restaurants)  # Debugging
 
     return render_template("foodMarketplace.html", restaurants=restaurants)
+
+if __name__ == "__main__":
+    app.run(debug=True)  # ✅ Make sure this is at the bottom
 
       
