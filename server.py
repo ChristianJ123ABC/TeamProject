@@ -456,6 +456,29 @@ def driver():
         past_deliveries = cursor.fetchall()
         cursor.close()
     
+    # Calculate earnings from past deliveries
+    earnings_total = 0
+    earnings_today = 0
+    earnings_week = 0
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    for delivery in past_deliveries:
+        # Ensure credits_earned is a float
+        credits = float(delivery['credits_earned'])
+        earnings_total += credits
+        
+        # Assume pickup_date is stored as a date object.
+        # If it's a string, you might need to convert it using datetime.strptime.
+        delivery_date = delivery['pickup_date']
+        if isinstance(delivery_date, str):
+            delivery_date = datetime.strptime(delivery_date, "%Y-%m-%d").date()
+        
+        if delivery_date == today:
+            earnings_today += credits
+        if delivery_date >= start_of_week:
+            earnings_week += credits
+
     # Prepare display values.
     delivery_status = current_delivery["status"] if current_delivery else "Idle"
     delivery_destination = "N/A"  # Update if you have a destination field
@@ -475,9 +498,9 @@ def driver():
                            delivery_eta=delivery_eta,
                            current_delivery=current_delivery,  # Pass active delivery details
                            upcoming_deliveries=[],  # If you add future deliveries, query here.
-                           earnings_today=0,
-                           earnings_week=0,
-                           earnings_total=0,
+                           earnings_today=earnings_today,
+                           earnings_week=earnings_week,
+                           earnings_total=earnings_total,
                            past_deliveries=past_deliveries)
 
 @app.route('/foodOwner')
@@ -785,8 +808,11 @@ def pickupRequest():
     cursor = mysql.connection.cursor()
     cursor.execute("SELECT * FROM Pickups WHERE status = 'pending'")
     pickups = cursor.fetchall()
+    # Query deposit requests: customers with pending deposit verification and nonzero credits
+    cursor.execute("SELECT customer_id, credits FROM Customers WHERE status = 'pending' AND credits > 0")
+    deposits = cursor.fetchall()
     cursor.close()
-    return render_template("pickupRequest.html", pending_pickups=pickups)
+    return render_template("pickupRequest.html", pending_pickups=pickups, deposit_requests=deposits)
 
 @app.route('/accept-pickup/<int:pickup_id>', methods=['POST'])
 def accept_pickup(pickup_id):
@@ -870,10 +896,10 @@ def complete_delivery(pickup_id):
         cursor.close()
         return redirect(url_for("driver"))
     
-    # Mark the delivery as complete.
+    # Mark the delivery as complete and update earnings (set credits_earned to 5)
     cursor.execute(
-        "UPDATE Pickups SET status = 'completed' WHERE pickup_id = %s",
-        (pickup_id,)
+        "UPDATE Pickups SET status = 'completed', credits_earned = %s WHERE pickup_id = %s",
+        (5, pickup_id)
     )
     mysql.connection.commit()
     cursor.close()
@@ -1057,6 +1083,16 @@ def redeemCredits():
         session["status"] = " "
 
         return redirect(url_for("deposit"))
+    
+@app.route('/verify-deposit/<int:customer_id>', methods=['POST'])
+def verify_deposit(customer_id):
+    cursor = mysql.connection.cursor()
+    # Update the customer status to 'verified'
+    cursor.execute("UPDATE Customers SET status = 'verified' WHERE customer_id = %s", (customer_id,))
+    mysql.connection.commit()
+    cursor.close()
+    flash(f"Deposit for customer {customer_id} verified.", 'success')
+    return redirect(url_for('pickupRequest'))
 
     
 

@@ -71,22 +71,22 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Pickup ID</th>
                             <th>Customer ID</th>
                             <th>Pickup Date</th>
                             <th>Pickup Time</th>
                             <th>Status</th>
+                            <th>Credits Earned</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for pickup in pending_pickups %}
                         <tr>
-                            <td>{{ pickup.pickup_id }}</td>
                             <td>{{ pickup.customer_id }}</td>
                             <td>{{ pickup.pickup_date }}</td>
                             <td>{{ pickup.pickup_time }}</td>
                             <td>{{ pickup.status }}</td>
+                            <td>{{ pickup.credits_earned }}</td>
                             <td>
                                 <form method="POST" action="{{ url_for('accept_pickup', pickup_id=pickup.pickup_id) }}">
                                     <button type="submit" class="btn btn-success">Accept</button>
@@ -104,6 +104,34 @@
                     <button type="submit" class="btn btn-info">Add Random Order</button>
                 </form>
                 <br>
+            </div>
+        </div>
+        <!-- New Deposit Requests Table -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Deposit Requests Awaiting Verification</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Credits</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deposit in deposit_requests %}
+                        <tr>
+                            <td>{{ deposit.customer_id }}</td>
+                            <td>{{ deposit.credits }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('verify_deposit', customer_id=deposit.customer_id) }}">
+                                    <button type="submit" class="btn btn-primary">Verify Deposit</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
