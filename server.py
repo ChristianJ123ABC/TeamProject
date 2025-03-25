@@ -226,58 +226,7 @@ def register():
         
 
         
- #code started by prakash#
-
- # Print the query data for debugging
-        print(f"Full Name: {full_name}")
-        print(f"Email: {email}")
-        print(f"Role: {role}")
-        print(f"Phone Number: {phone_number}")
-        print(f"Address: {address}")
-        print(f"Hashed Password: {hashPass}")
-
-        
- # If the user is a driver, create a Stripe Checkout Session
-        if role == "driver":
-            try:
-                checkout_session = stripe.checkout.Session.create(
-                    payment_method_types=["card"],
-                    line_items=[
-                        {
-                            "price_data": {
-                                "currency": "usd",
-                                "product_data": {
-                                    "name": "Driver Joining Fee",
-                                },
-                                "unit_amount": 1000,  # Joining fee in cents (e.g., $10.00)
-                            },
-                            "quantity": 1,
-                        }
-                    ],
-                    mode="payment",
-                    success_url=url_for("success", _external=True),
-                    cancel_url=url_for("register", _external=True),
-                   metadata={
-                        "full_name": full_name,
-                        "email": email,
-                        "password": hashPass,  # Store the hashed password in metadata
-                        "role": "driver",
-                        "phone_number": phone_number,
-                        "address": address,
-                    },
-                )
-                return redirect(checkout_session.url, code=303)
-            except stripe.error.StripeError as e:
-                flash(f"Payment failed: {str(e)}", 'error')
-                return redirect(url_for("register"))
-
-        #code end by prakash#
-
-
-
-
-
-        #inserts the data into the database non- driver role 
+ 
         
         cursor = mysql.connection.cursor()
     try:
@@ -727,12 +676,22 @@ def create_checkout_session():
     user_credit = float(session.get("credits", 0))
     cart = session.get('cart', [])
     
+  # Check if delivery fee checkbox is checked
+    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
+    use_credits = request.form.get('use_credits') == 'yes'
+    if not delivery_fee:
+        flash("You must agree to the delivery fee before proceeding.", "error")
+        return redirect(url_for('Cpayment'))
+
+    #delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
+    use_credits = request.form.get('use_credits') == 'yes'
+
+
     if not cart:
         flash("Your cart is empty. Add items before checking out.", "warning")
         return redirect(url_for('Cpayment'))
     
-    delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
-    use_credits = request.form.get('use_credits') == 'yes'
+   
     
     total_price = sum(float(item['price']) for item in cart)
     total_amount = total_price + delivery_fee
