@@ -107,5 +107,13 @@ CREATE TABLE Payments (
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE Deposits (
+    deposit_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    deposited_credits DECIMAL(10,2) NOT NULL,
+    status ENUM('pending', 'verified') DEFAULT 'pending',
+    deposit_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
 
 

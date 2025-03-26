@@ -149,7 +149,7 @@ const images = [
         let userCredit = parseFloat(document.getElementById('user-credit').textContent) || 0;
 
         let finalAmount = total + deliveryFee; // Base price including delivery
-        if (useCredits) {
+        if (useCredits && userCredit > 0) {
             finalAmount = Math.max(0, finalAmount - userCredit); // Deduct user credits if checked
         }
 
@@ -157,6 +157,7 @@ const images = [
 
         // Update hidden delivery field for form submission
         document.getElementById('delivery-hidden').value = deliveryFeeChecked ? "yes" : "no";
+        document.getElementById('use-credits-hidden').value = useCredits ? "yes" : "no";
     }
 
         // Checkout Process

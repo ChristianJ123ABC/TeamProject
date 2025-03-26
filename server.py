@@ -673,12 +673,15 @@ def save_order_to_db(cart, total_amount, customer_id, mysql):
 
 @app.route('/create-checkout-session-one-time', methods=['POST'])
 def create_checkout_session():
-    user_credit = float(session.get("credits", 0))
+    
+    #fetch user credit and verification status
+    user_credit = float(session.get("verified_credits", 0))
+    #user_status = session.get("status", "")
     cart = session.get('cart', [])
     
   # Check if delivery fee checkbox is checked
     delivery_fee = 2 if request.form.get('delivery') == 'yes' else 0
-    use_credits = request.form.get('use_credits') == 'yes'
+    #use_credits = request.form.get('use_credits') == 'yes'
     if not delivery_fee:
         flash("You must agree to the delivery fee before proceeding.", "error")
         return redirect(url_for('Cpayment'))
@@ -758,19 +761,40 @@ def payment_success():
 def Dprofile():
     return render_template("Dprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
 
+#END: CODE COMPLETED BY PRAKASH
+
+
 # CODE COMPLETED BY GLENN
 # Routes for Pickup Request Actions
 
 @app.route('/pickupRequest')
 def pickupRequest():
-    # Fetch only pending pickup requests from the database
     cursor = mysql.connection.cursor()
+
+    # Fetch pending pickup requests
     cursor.execute("SELECT * FROM Pickups WHERE status = 'pending'")
     pickups = cursor.fetchall()
-    # Query deposit requests: customers with pending deposit verification and nonzero credits
+
+    # Fetch pending deposit requests (not yet verified)
     cursor.execute("SELECT customer_id, credits FROM Customers WHERE status = 'pending' AND credits > 0")
     deposits = cursor.fetchall()
+
+    # Fetch verified deposits
+    cursor.execute("SELECT customer_id, credits FROM Customers WHERE status = 'verified' AND credits > 0")
+    verified_deposits = cursor.fetchall()
+
     cursor.close()
+
+ # Ensure verified_deposits is not empty before creating a dictionary
+    if verified_deposits:
+        session["verified_credits"] = {customer_id: credits for customer_id, credits in verified_deposits}
+        
+        # Show a flash message for each verified deposit
+        for customer_id, credits in verified_deposits:
+                        session[f"verified_message_{customer_id}"] = f"Deposit Verified! {credits} EUR added."
+    else:
+        session["verified_credits"] = {}  # Empty dictionary if no verified deposits exist
+
     return render_template("pickupRequest.html", pending_pickups=pickups, deposit_requests=deposits)
 
 @app.route('/accept-pickup/<int:pickup_id>', methods=['POST'])
@@ -872,6 +896,10 @@ def earningReport():
 
 #CODE COMPLETED BY GLENN
 
+
+
+#START: CODE COMPLETED BY PRAKASH
+
 @app.route('/Fprofile', methods=["GET", "POST"])
 def Fprofile():
     return render_template("Fprofile.html", full_name=session["full_name"], email=session["email"], phone_number=session["phone_number"], address=session["address"])
@@ -968,13 +996,17 @@ def cancel():
     return render_template("cancel.html", message="Your payment was unsuccessful. Please try again.")
 
 
-
 #END: CODE COMPLETED BY PRAKASH
+
+
 
 #START: CODE COMPLETED BY CHRISTIAN
 @app.route("/deposit", methods = ["GET", "POST"])
 def deposit():
     if request.method == "GET":
+         # If the deposit was just verified, show a success message
+        if session.get("status") == "verified":
+            flash(f"Your deposit has been verified! You now have €{session['credits']} in credits.", "success")
         return render_template("deposit.html", status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
     
     else:
@@ -1001,13 +1033,14 @@ def deposit():
             flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them", 'success')
 
             session["credits"] = float(session["credits"]) + float(credits)
+            session["status"] = "pending"
 
             cursor = mysql.connection.cursor()
             cursor.execute("UPDATE Customers SET status = %s WHERE customer_id = %s", ("pending", session["customer_id"]))
             mysql.connection.commit()
             cursor.close()
 
-            session["status"] = "pending"
+           # session["status"] = "pending"
 
             return redirect(url_for("deposit"))
     
@@ -1050,7 +1083,9 @@ def verify_deposit(customer_id):
     cursor.execute("UPDATE Customers SET status = 'verified' WHERE customer_id = %s", (customer_id,))
     mysql.connection.commit()
     cursor.close()
-    flash(f"Deposit for customer {customer_id} verified.", 'success')
+    
+     # Store the verified message in session (so it appears in /deposit)
+    session[f"verified_message_{customer_id}"] = f"Deposit Verified! Your credits are now available."
     return redirect(url_for('pickupRequest'))
 
     

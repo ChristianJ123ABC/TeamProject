@@ -65,18 +65,19 @@
     <p><strong>Total:</strong> <span id="total-price">0</span> Credits</p>
     
     <label>
-        <input type="checkbox" id="use-credits" onchange="updateTotal()"> Use Credits
+        <input type="checkbox" id="use-credits" name="use_credits" onchange="updateTotal()"> Use verified Credits
     </label>
-    <p><strong>Your Credits:</strong> <span id="user-credit">Loading...</span> Credits</p>
+    <p><strong>Your Credits:</strong> <span id="user-credit">{{ session.get('credits', 0) }}</span> Credits</p>
 
     <label>
-        <input type="checkbox" id="delivery" onchange="updateTotal()"> Include Delivery (2 Credits)
+        <input type="checkbox" id="delivery" name="delivery" onchange="updateTotal()"> Include Delivery (2 Credits)
     </label>
 
     <p><strong>Amount to Pay:</strong> <span id="final-amount">0</span> Credits</p>
 
-    <form action="/create-checkout-session-one-time" method="POST">
+    <form action="/create-checkout-session-one-time" method="POST" onsubmit="syncHiddenFields()">
         <input type="hidden" name="delivery" id="delivery-hidden">
+        <input type="hidden" name="use_credits" id="use-credits-hidden">
         <button type="submit" class="btn btn-primary">Proceed to Payment</button>
     </form>
 </div>
