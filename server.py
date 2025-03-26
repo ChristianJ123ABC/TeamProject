@@ -336,6 +336,7 @@ def login():
                     session["customer_id"] = customer["customer_id"]
                     session["credits"] = customer["credits"]
                     session["status"] = customer["status"]
+                    session["pending_credits"] = customer["pending_credits"]
 
                 
                 return redirect(url_for("customer"))
@@ -675,7 +676,7 @@ def save_order_to_db(cart, total_amount, customer_id, mysql):
 def create_checkout_session():
     
     #fetch user credit and verification status
-    user_credit = float(session.get("verified_credits", 0))
+    user_credit = float(session.get("credits", 0))
     #user_status = session.get("status", "")
     cart = session.get('cart', [])
     
@@ -776,24 +777,24 @@ def pickupRequest():
     pickups = cursor.fetchall()
 
     # Fetch pending deposit requests (not yet verified)
-    cursor.execute("SELECT customer_id, credits FROM Customers WHERE status = 'pending' AND credits > 0")
+    cursor.execute("SELECT customer_id, pending_credits FROM Customers WHERE status = 'pending' AND pending_credits > 0")
     deposits = cursor.fetchall()
 
     # Fetch verified deposits
-    cursor.execute("SELECT customer_id, credits FROM Customers WHERE status = 'verified' AND credits > 0")
+    cursor.execute("SELECT customer_id, pending_credits FROM Customers WHERE status = 'verified' AND pending_credits > 0")
     verified_deposits = cursor.fetchall()
 
     cursor.close()
 
  # Ensure verified_deposits is not empty before creating a dictionary
     if verified_deposits:
-        session["verified_credits"] = {customer_id: credits for customer_id, credits in verified_deposits}
+        session["credits"] = {customer_id: credits for customer_id, credits in verified_deposits}
         
         # Show a flash message for each verified deposit
         for customer_id, credits in verified_deposits:
                         session[f"verified_message_{customer_id}"] = f"Deposit Verified! {credits} EUR added."
     else:
-        session["verified_credits"] = {}  # Empty dictionary if no verified deposits exist
+        session["credits"] = {}  # Empty dictionary if no verified deposits exist
 
     return render_template("pickupRequest.html", pending_pickups=pickups, deposit_requests=deposits)
 
@@ -1007,7 +1008,7 @@ def deposit():
          # If the deposit was just verified, show a success message
         if session.get("status") == "verified":
             flash(f"Your deposit has been verified! You now have €{session['credits']} in credits.", "success")
-        return render_template("deposit.html", status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
+        return render_template("deposit.html",  status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
     
     else:
         #If the input field is empty
@@ -1025,14 +1026,14 @@ def deposit():
             return redirect(url_for("deposit"))
         
         else:
-            cursor.execute("UPDATE Customers SET credits = credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
+            cursor.execute("UPDATE Customers SET pending_credits = pending_credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
             mysql.connection.commit()
             cursor.close()
             
             #F-string used to display the variables alongside Flash
             flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them", 'success')
 
-            session["credits"] = float(session["credits"]) + float(credits)
+            session["pending_credits"] = float(session["pending_credits"]) + float(credits)
             session["status"] = "pending"
 
             cursor = mysql.connection.cursor()
@@ -1048,15 +1049,17 @@ def deposit():
 @app.route('/redeemCredits')
 def redeemCredits():
     credits = float(session.get("credits"))  #used to prevent <= error
-    
+    pending_credits = float(session.get("pending_credits"))
+
+    if session.get("status") == "pending":
+        flash("You cannot use your credits until they are verified", 'error')
+        return redirect(url_for("deposit"))
 
     if credits <= 0 or credits == 0 or credits == 0.00 or credits == None: 
         flash("You cannot redeem any credits since you do not have any", 'error')
         return redirect(url_for("deposit"))
     
-    elif session.get("status") == "pending":
-        flash("You cannot use your credits until they are verified", 'error')
-        return redirect(url_for("deposit"))
+
     
     elif session.get("status") == "verified" or session.get("status") != "pending":
         flash(f"You have redeemed {session["credits"]} euro. You should receive your cash in 3-5 business days", 'success')
@@ -1081,6 +1084,13 @@ def verify_deposit(customer_id):
     cursor = mysql.connection.cursor()
     # Update the customer status to 'verified'
     cursor.execute("UPDATE Customers SET status = 'verified' WHERE customer_id = %s", (customer_id,))
+    mysql.connection.commit()
+
+    cursor.execute("UPDATE Customers SET credits = pending_credits + credits WHERE customer_id = %s", (customer_id,))
+    mysql.connection.commit()
+
+    
+    cursor.execute("UPDATE Customers SET pending_credits = 0 WHERE customer_id = %s", (customer_id,))
     mysql.connection.commit()
     cursor.close()
     

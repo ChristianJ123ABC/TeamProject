@@ -122,7 +122,7 @@
                         {% for deposit in deposit_requests %}
                         <tr>
                             <td>{{ deposit.customer_id }}</td>
-                            <td>{{ deposit.credits }}</td>
+                            <td>{{ deposit.pending_credits }}</td>
                             <td>
                                 <form method="POST" action="{{ url_for('verify_deposit', customer_id=deposit.customer_id) }}">
                                     <button type="submit" class="btn btn-primary">Verify Deposit</button>
