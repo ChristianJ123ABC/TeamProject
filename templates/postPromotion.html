@@ -65,14 +65,19 @@
                 </div>
             </nav>
             <!-- used to display flash messages when called-->
-            <div class = "flash">
-                {% with messages = get_flashed_messages(with_categories = true)%}
-                {% if messages%}
-                    {% for category, message in messages%}
-                    <div class = "{{ category }}"><h2>{{message}}</h2></div>
-                    {%endfor%}
-                    {%endif%}
-                    {%endwith%}
+            <div class="flash">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="{{ category }}"><h2>{{ message }}</h2></div>
+                            {% if category == "error" %} 
+                            <a href="{{ url_for('subscription') }}" class="alert-link ms-2">Renew Subscription</a>
+                            {% endif %}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                            {% endfor %}
+                    {% endif %}
+                {% endwith %}
             </div>
             
             <h1>Food Promotion Page</h1>
@@ -94,6 +99,8 @@
                 <h1>Billboard</h1>
                 
             </div>
+
+            
             
             <!-- Interactive slideshow that checks each image in Promotion and displays them-->
             <div id="promotions" class="carousel slide" data-bs-ride="carousel">
