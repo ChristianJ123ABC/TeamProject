@@ -1183,9 +1183,25 @@ def postPromotion():
     #Used to create the Jinja template / display each image in promotion page
     if request.method == "GET":
         cursor = mysql.connection.cursor()
-        cursor.execute("SELECT id, image, caption FROM Promotions")
-        promotions = cursor.fetchall()
-        return render_template("postPromotion.html", promotions=promotions)
+        user_id = session["user_id"]
+        
+
+        if user_id:
+            cursor.execute("SELECT promoter_id FROM Subscriptions WHERE promoter_id = %s", (user_id,))
+            validSub = cursor.fetchone()
+
+            if validSub:
+                cursor.execute("SELECT id, image, caption FROM Promotions")
+                promotions = cursor.fetchall()
+                return render_template("postPromotion.html", promotions=promotions)
+        
+            else:
+                flash("You must subscribe to our plan to use the food promotion!", "error")
+                return redirect(url_for('foodOwner'))
+
+        
+    
+        
     
     else:
         #Validation 
