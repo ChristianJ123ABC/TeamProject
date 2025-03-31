@@ -47,6 +47,7 @@
 #https://www.youtube.com/watch?v=YLptAhf3wwM&t=963s
 #https://www.geeksforgeeks.org/python-os-remove-method/
 
+
 #Flash
 #https://flask.palletsprojects.com/en/stable/patterns/flashing/
 #https://stackoverflow.com/questions/44569040/change-color-of-flask-flash-messages
@@ -130,6 +131,9 @@ def email_exists(email):
 
 def phoneNumRange(phone_number):
     return re.match(r"^\d{10}$",phone_number)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 
@@ -1025,6 +1029,11 @@ def deposit():
             flash("Please enter less than 100 bottles at a time!", 'warning')
             return redirect(url_for("deposit"))
         
+        elif(bottles <= 0):
+            flash("You cannot enter less than 1 bottle", 'warning')
+            return redirect(url_for("deposit"))
+    
+        
         else:
             cursor.execute("UPDATE Customers SET pending_credits = pending_credits + %s WHERE customer_id = %s", (credits, session["customer_id"]))
             mysql.connection.commit()
@@ -1207,9 +1216,14 @@ def postPromotion():
         #Validation 
         if request.method == 'POST':
             image = request.files['image']
-            if image.filename == '':
+
+            if not image or image.filename == '':
                 flash('No selected file', 'error')
                 return redirect(url_for('postPromotion')) 
+            
+            if not allowed_file(image.filename):
+                flash('Invalid image type, use the following image extensions: .JPG, .PNG or .JPEG', 'error')
+                return redirect(url_for('postPromotion'))
             
             if image:
                 #Creates a filepath of uploads\x.jpg 
