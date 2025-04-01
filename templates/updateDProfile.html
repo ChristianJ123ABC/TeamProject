@@ -45,11 +45,12 @@
             {%endwith%}
     </div>
             <h1>Update Driver Profile</h1>
-                <form method = "POST" action="{{ url_for('updateDProfile') }}">
+                <form method = "POST" action="{{ url_for('updateDProfile') }}" style="margin: 0 auto; width: 50%; text-align: center;">
                     <input type = "text" name = "full_name" placeholder = "Full Name" required><br>
                     <input type = "email" name = "email" placeholder = "Email" required><br>
                     <input type = "tel" name = "phone_number" placeholder = "Phone Number " required><br>
                     <input type = "text" name = "address" placeholder = "Address" required><br>
+                    <br>
                     <button type = "submit">Submit</button>
                 </form>
         <!-- END: CODE FINISHED BY CHRISTIAN -->
