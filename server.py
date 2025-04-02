@@ -821,6 +821,9 @@ def accept_pickup(pickup_id):
     driver_id = driver["driver_id"]
     # Update the session to store the driver_id so the dashboard can access it.
     session["driver_id"] = driver_id
+
+    # Calculate pickup_time as 30 minutes after the current time
+    pickup_time = (datetime.now() + timedelta(minutes=30)).strftime("%H:%M:%S")
     
     # Update the pickup request with the retrieved driver_id.
     cursor.execute(
@@ -863,6 +866,48 @@ def add_random_pickup():
     mysql.connection.commit()
     cursor.close()
     flash("Random pickup request added!", 'success')
+    return redirect(url_for('pickupRequest'))
+
+@app.route('/sync-pickups', methods=['POST'])
+def sync_pickups():
+    cursor = mysql.connection.cursor()
+    today = date.today()
+    
+    # Query orders from today.
+    # (Adjust this query as needed to match your criteria for "unsynced" orders.)
+    cursor.execute("SELECT order_id, customer_id, order_date FROM Orders WHERE order_date = %s", (today,))
+    orders = cursor.fetchall()
+    
+    if not orders:
+        flash("No orders found for today to sync.", "warning")
+        return redirect(url_for('pickupRequest'))
+    
+    synced_count = 0
+    for order in orders:
+        # Check if a pickup already exists for this order based on customer_id and order_date.
+        cursor.execute("SELECT * FROM Pickups WHERE customer_id = %s AND pickup_date = %s", 
+                       (order['customer_id'], order['order_date']))
+        existing = cursor.fetchone()
+        if existing:
+            continue  # Skip orders that already have a corresponding pickup
+        
+        # Insert a new pickup record.
+        # Here, we set pickup_time to NULL (or you could use a default like "00:00:00"),
+        # status as 'pending', and credits_earned as 0.00.
+        cursor.execute("""
+            INSERT INTO Pickups (customer_id, pickup_date, pickup_time, status, credits_earned)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (order['customer_id'], order['order_date'], None, 'pending', 5.00))
+        synced_count += 1
+
+    mysql.connection.commit()
+    cursor.close()
+    
+    if synced_count > 0:
+        flash(f"{synced_count} order(s) synced to pickups successfully.", "success")
+    else:
+        flash("No new orders to sync.", "warning")
+    
     return redirect(url_for('pickupRequest'))
 
 @app.route('/complete-delivery/<int:pickup_id>', methods=['POST'])
