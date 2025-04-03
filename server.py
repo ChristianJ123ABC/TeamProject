@@ -1071,7 +1071,7 @@ def deposit():
         cursor = mysql.connection.cursor()
         
         if(bottles > 100):
-            flash("Please enter less than 100 bottles at a time!", 'warning')
+            flash("Please deposit 100 bottles or less at a time", 'warning')
             return redirect(url_for("deposit"))
         
         elif(bottles <= 0):
