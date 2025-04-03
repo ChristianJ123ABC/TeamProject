@@ -1270,21 +1270,21 @@ def postPromotion():
                 flash('Invalid image type, use the following image extensions: .JPG, .PNG or .JPEG', 'error')
                 return redirect(url_for('postPromotion'))
             
-            if image:
-                #Creates a filepath of uploads\x.jpg 
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
-                image.save(filepath)
-                uploadFilePath= os.path.join('uploads', image.filename)
+            
+            #Creates a filepath of uploads\x.jpg 
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
+            image.save(filepath)
+            uploadFilePath= os.path.join('uploads', image.filename)
 
-                # Insert image into database with a caption
-                cursor = mysql.connection.cursor()
-                caption = request.form.get('caption')
-                cursor.execute("INSERT INTO Promotions (image, caption) VALUES (%s, %s)", (uploadFilePath, caption))
-                mysql.connection.commit()
-                cursor.close()
-                
-                flash('Image uploaded successfully', 'success')
-                return redirect(url_for('postPromotion'))
+            # Insert image into database with a caption
+            cursor = mysql.connection.cursor()
+            caption = request.form.get('caption')
+            cursor.execute("INSERT INTO Promotions (image, caption) VALUES (%s, %s)", (uploadFilePath, caption))
+            mysql.connection.commit()
+            cursor.close()
+            
+            flash('Image uploaded successfully', 'success')
+            return redirect(url_for('postPromotion'))
 
 
 
@@ -1306,6 +1306,7 @@ def deleteImage(id):
     cursor.execute("DELETE FROM Promotions WHERE id = %s", (id,))
     mysql.connection.commit()
     cursor.close()
+    flash('Image successfully deleted!', 'success')
 
     return redirect(url_for("postPromotion"))
 
