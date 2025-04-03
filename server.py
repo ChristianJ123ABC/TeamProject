@@ -875,7 +875,7 @@ def sync_pickups():
     
     # Query orders from today.
     # (Adjust this query as needed to match your criteria for "unsynced" orders.)
-    cursor.execute("SELECT order_id, customer_id, order_date FROM Orders WHERE order_date = %s", (today,))
+    cursor.execute("SELECT order_id, customer_id, order_date FROM Orders WHERE DATE(order_date) = %s", (today,))
     orders = cursor.fetchall()
     
     if not orders:
@@ -897,7 +897,7 @@ def sync_pickups():
         cursor.execute("""
             INSERT INTO Pickups (customer_id, pickup_date, pickup_time, status, credits_earned)
             VALUES (%s, %s, %s, %s, %s)
-        """, (order['customer_id'], order['order_date'], None, 'pending', 5.00))
+        """, (order['customer_id'], order['order_date'], "00:00:00", 'pending', 5.00))
         synced_count += 1
 
     mysql.connection.commit()
