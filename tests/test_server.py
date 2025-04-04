@@ -1,52 +1,53 @@
-
+# tests/test_server.py
+import pytest
 from flask import session
-from server import app  # make sure to import your actual app
 from werkzeug.security import generate_password_hash
+from server import app  # import your app
+
+# Mocking the database calls
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
-    app.config['WTF_CSRF_ENABLED'] = False  # If you’re using CSRF protection
+    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
     with app.test_client() as client:
-        with app.app_context():
-            yield client
+        yield client
 
-def test_login_valid_user(monkeypatch, client):
-    test_email = "test@example.com"
-    test_password = "password123"
-    hashed_password = generate_password_hash(test_password)
+# Mock data for testing
+@pytest.fixture
+def mock_user_data():
+    return {
+        "user_id": 1,
+        "full_name": "John Doe",
+        "email": "john@example.com",
+        "password": generate_password_hash("password123"),
+        "role": "customer",
+        "phone_number": "1234567890",
+        "address": "123 Main St"
+    }
 
-    # Mock the database call to return a fake user
-    def mock_fetchone_user():
-        return {
-            "user_id": 1,
-            "full_name": "Test User",
-            "email": test_email,
-            "password": hashed_password,
-            "role": "customer",
-            "phone_number": "1234567890",
-            "address": "Test Address"
-        }
+@pytest.fixture
+def mock_customer_data():
+    return {
+        "customer_id": 1,
+        "credits": 100,
+        "status": "active",
+        "pending_credits": 20
+    }
 
-    def mock_fetchone_customer():
-        return {
-            "customer_id": 1,
-            "credits": 50,
-            "status": "active",
-            "pending_credits": 10
-        }
+def test_login_valid_user(client, mock_user_data, mock_customer_data, monkeypatch):
+    # Mock the database interactions
+    def mock_execute(query, params):
+        if "FROM Users" in query:
+            return mock_user_data
+        elif "FROM Customers" in query:
+            return mock_customer_data
+        return None
 
-    # Monkeypatch the database cursor execute & fetchone
     class MockCursor:
         def execute(self, query, params):
-            self.query = query
-            self.params = params
-
+            return mock_execute(query, params)
         def fetchone(self):
-            if "FROM Users" in self.query:
-                return mock_fetchone_user()
-            elif "FROM Customers" in self.query:
-                return mock_fetchone_customer()
-
+            return mock_execute(self.query, self.params)
         def close(self):
             pass
 
@@ -54,13 +55,23 @@ def test_login_valid_user(monkeypatch, client):
         def cursor(self):
             return MockCursor()
 
-    monkeypatch.setattr("server.mysql", type("MockMySQL", (), {"connection": MockConnection()}))
+    monkeypatch.setattr("server.mysql.connection", MockConnection())
 
+    # Simulate a POST request to the login route with valid credentials
     response = client.post("/login", data={
-        "email": test_email,
-        "password": test_password
+        "email": mock_user_data["email"],
+        "password": "password123"
     }, follow_redirects=True)
 
+    # Check the session is set correctly
     assert response.status_code == 200
-    assert b"customer" in response.data  # assuming "customer" appears in the HTML of the customer page
-    assert session.get("user_id") == 1
+    assert session["user_id"] == mock_user_data["user_id"]
+    assert session["role"] == mock_user_data["role"]
+    assert session["full_name"] == mock_user_data["full_name"]
+    assert session["email"] == mock_user_data["email"]
+    assert session["phone_number"] == mock_user_data["phone_number"]
+    assert session["address"] == mock_user_data["address"]
+    assert "customer_id" in session  # customer details are loaded
+
+    # Check that the user is redirected to the "customer" page
+    assert response.request.path == '/customer'
