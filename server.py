@@ -418,12 +418,9 @@ def driver():
     start_of_week = today - timedelta(days=today.weekday())
     
     for delivery in past_deliveries:
-        # Ensure credits_earned is a float
         credits = float(delivery['credits_earned'])
         earnings_total += credits
         
-        # Assume pickup_date is stored as a date object.
-        # If it's a string, you might need to convert it using datetime.strptime.
         delivery_date = delivery['pickup_date']
         if isinstance(delivery_date, str):
             delivery_date = datetime.strptime(delivery_date, "%Y-%m-%d").date()
@@ -436,11 +433,25 @@ def driver():
     # Prepare display values.
     delivery_status = current_delivery["status"] if current_delivery else "Idle"
     delivery_destination = "N/A"  # Update if you have a destination field
+    
+    pickup_value = None
+    # Updated delivery_eta calculation:
     if current_delivery and current_delivery.get("pickup_time"):
-        pickup_timedelta = current_delivery["pickup_time"]
-        # Convert timedelta to a time object (assuming it represents time since midnight)
-        pickup_time = (datetime.min + pickup_timedelta).time()
-        delivery_eta = pickup_time.strftime("%H:%M")
+        pickup_value = current_delivery["pickup_time"]
+    if isinstance(pickup_value, timedelta):
+        # Convert the timedelta (which represents the time since midnight) to a time object.
+        converted_time = (datetime.min + pickup_value).time()
+        delivery_eta = converted_time.strftime("%H:%M")
+    elif hasattr(pickup_value, "strftime"):
+        delivery_eta = pickup_value.strftime("%H:%M")
+    elif isinstance(pickup_value, str):
+        try:
+            parsed_time = datetime.strptime(pickup_value, "%H:%M:%S").time()
+            delivery_eta = parsed_time.strftime("%H:%M")
+        except Exception as e:
+            delivery_eta = "N/A"
+        else:
+            delivery_eta = "N/A"
     else:
         delivery_eta = "N/A"
     
@@ -823,12 +834,12 @@ def accept_pickup(pickup_id):
     session["driver_id"] = driver_id
 
     # Calculate pickup_time as 30 minutes after the current time
-    pickup_time = (datetime.now() + timedelta(minutes=30)).strftime("%H:%M:%S")
+    pickup_time_obj = (datetime.now() + timedelta(minutes=30)).time()
     
     # Update the pickup request with the retrieved driver_id.
     cursor.execute(
-        "UPDATE Pickups SET status = 'accepted', driver_id = %s WHERE pickup_id = %s",
-        (driver_id, pickup_id)
+    "UPDATE Pickups SET status = 'accepted', driver_id = %s, pickup_time = %s WHERE pickup_id = %s",
+    (driver_id, pickup_time_obj, pickup_id)
     )
     mysql.connection.commit()
     cursor.close()

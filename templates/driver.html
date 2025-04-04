@@ -81,7 +81,7 @@
                         {% endif %}
                     </p>
                     <p><strong>Status:</strong> {{ current_delivery.status }}</p>
-                    <p><strong>Credits Earned:</strong> {{ current_delivery.credits_earned }}</p>
+                    <p><strong>Fee Earned:</strong> €{{ current_delivery.credits_earned }}</p>
                     <!-- Form to mark delivery complete -->
                     <form action="{{ url_for('complete_delivery', pickup_id=current_delivery.pickup_id) }}" method="post">
                         <button type="submit" class="btn btn-success">Mark Delivery Complete</button>
@@ -111,7 +111,7 @@
                             <th>Pickup ID</th>
                             <th>Pickup Date</th>
                             <th>Pickup Time</th>
-                            <th>Credits Earned</th>
+                            <th>Fee Earned</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -127,7 +127,7 @@
                                     N/A
                                 {% endif %}
                             </td>
-                            <td>{{ past_delivery.credits_earned }}</td>
+                            <td>€{{ past_delivery.credits_earned }}</td>
                             <td><span class="badge bg-success">{{ past_delivery.status }}</span></td>
                         </tr>
                         {% else %}

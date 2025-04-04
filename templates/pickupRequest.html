@@ -66,22 +66,22 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
+                            <th>Pickup ID</th>
                             <th>Customer ID</th>
                             <th>Pickup Date</th>
-                            <th>Pickup Time</th>
                             <th>Status</th>
-                            <th>Credits Earned</th>
+                            <th>Fee Earned</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for pickup in pending_pickups %}
                         <tr>
+                            <td>{{ pickup.pickup_id }}</td>
                             <td>{{ pickup.customer_id }}</td>
                             <td>{{ pickup.pickup_date }}</td>
-                            <td>{{ pickup.pickup_time }}</td>
                             <td>{{ pickup.status }}</td>
-                            <td>{{ pickup.credits_earned }}</td>
+                            <td>€{{ pickup.credits_earned }}</td>
                             <td>
                                 <form method="POST" action="{{ url_for('accept_pickup', pickup_id=pickup.pickup_id) }}">
                                     <button type="submit" class="btn btn-success">Accept</button>
@@ -96,13 +96,12 @@
                 </table>
                 <br>
                 <form method="POST" action="{{ url_for('sync_pickups') }}">
-                    <button type="submit" class="btn btn-warning">Load Current Orders</button>
+                    <button type="submit" class="btn btn-warning">Load Todays Pending Orders</button>
                 </form>
                 <br>
-                <form method="POST" action="{{ url_for('add_random_pickup') }}">
+                <!--<form method="POST" action="{{ url_for('add_random_pickup') }}">
                     <button type="submit" class="btn btn-info">Add Random Order</button>
-                </form>
-                <br>
+                </form><!-->
             </div>
         </div>
         <!-- New Deposit Requests Table -->
