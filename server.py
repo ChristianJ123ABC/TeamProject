@@ -1330,22 +1330,7 @@ if __name__ == "__main__":
 #END: CODE COMPLETED BY CHRISTIAN
 
 
-@app.route('/foodMarketplace')
-def foodMarketplace():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT id, name, image, description FROM Restaurants")
-    rows = cur.fetchall()
-    
-    # Convert tuples to dictionaries for Jinja compatibility
-    restaurants = [{"id": row[0], "name": row[1], "image": row[2], "description": row[3]} for row in rows]
 
-    cur.close()
-    
-    print("✅ RESTAURANTS LOADED:", restaurants)  # Debugging
 
-    return render_template("foodMarketplace.html", restaurants=restaurants)
-
-if __name__ == "__main__":
-    app.run(debug=True)  # ✅ Make sure this is at the bottom
 
       
