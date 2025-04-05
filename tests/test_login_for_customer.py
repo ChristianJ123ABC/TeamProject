@@ -31,6 +31,7 @@ def test_login_is_customer(client):
     assert response.status_code == 200
     assert response.request.path == '/customer'
 
+
 def test_login_is_not_customer(client):
     response = client.post("/login", data={
         "email": "boy@gmail.com",
@@ -40,3 +41,15 @@ def test_login_is_not_customer(client):
     
     assert response.status_code == 200
     assert response.request.path == '/driver' or '/foodOwner'
+
+def test_invalid_password(client):
+    response = client.post("/login", data={
+        "email": "geh@gmail.com",
+        "password": "beeeeee",
+
+    }, follow_redirects = True) #Used to implement redirect responses
+    
+    assert response.status_code == 200
+    assert response.request.path == '/customer'
+
+
