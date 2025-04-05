@@ -2,11 +2,14 @@
 #https://flask.palletsprojects.com/en/stable/testing/
 #https://www.youtube.com/watch?v=RLKW7ZMJOf4&t=595s
 #https://flask.palletsprojects.com/en/stable/config/
+#https://docs.pytest.org/en/6.2.x/fixture.html
+#https://stackoverflow.com/questions/372885/how-do-i-connect-to-a-mysql-database-in-python
 
 import pytest
-from flask import session
 from server import app as create_app
 from pathlib import Path
+import MySQLdb
+resources = Path(__file__).parent.parent / "tests" / "resources" #Folder with designated files to test
 
 
 @pytest.fixture()
@@ -17,7 +20,7 @@ def app():
     })
     yield create_app
 
-resources = Path(__file__).parent.parent / "tests" / "resources" #Folder with designated files to test
+
 
 @pytest.fixture()
 def client(app):
@@ -72,5 +75,22 @@ def test_promotion_image_not_uploaded(client):
     
     assert response.status_code == 400
     assert response.request.path == '/postPromotion'
+
     
+@pytest.fixture(scope="session", autouse=True)
+def wipe_db():
+    yield #Executes the function
+    database = MySQLdb.connect(
+        host='viaduct.proxy.rlwy.net',
+        user='root',
+        password='WrwOIlogTwAShYIOsHGKQveeLHfVNxwy',
+        db='railway',
+        port=13847
+    )
+    cursor = database.cursor()
+
     
+    cursor.execute("DELETE FROM Promotions WHERE caption = %s", ('123',))
+    cursor.connection.commit()  
+    cursor.close()  
+
