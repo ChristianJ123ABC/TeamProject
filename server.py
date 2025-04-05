@@ -128,6 +128,13 @@ def email_exists(email):
     cursor.close()
     return user
 
+def phone_number_exists(phone_number):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM Users WHERE phone_number = %s", (phone_number,))
+    user = cursor.fetchone()
+    cursor.close()
+    return user
+
 
 def phoneNumRange(phone_number):
     return re.match(r"^\d{10}$",phone_number)
@@ -222,6 +229,10 @@ def register():
         
         elif email_exists(email):
             flash("Email is already registered", 'error')
+            return redirect(url_for("register"))
+        
+        elif phone_number_exists(phone_number):
+            flash("An account with this phone number already exists", 'error')
             return redirect(url_for("register"))
         
         elif not phoneNumRange(phone_number):
