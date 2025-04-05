@@ -1096,7 +1096,7 @@ def deposit():
             cursor.close()
             
             #F-string used to display the variables alongside Flash
-            flash(f"Deposit successful!", 'success')
+            
             flash(f"You have deposited {bottles} bottles, you will receive {credits} euro in your credits! They must be verified first in order to use them", 'success')
 
             session["pending_credits"] = float(session["pending_credits"]) + float(credits)

@@ -25,7 +25,7 @@ def client(app):
 
 def test_deposit_invalid_num_of_bottles(client):
     with client.session_transaction() as session:
-        session["customer_id"] = 12 #Food Promoter ID with a subscription
+        session["customer_id"] = 12 #Customer test id
         session["pending_credits"] = 0.00
         session["credits"] = 0.00
         session["status"] = ""
@@ -42,7 +42,7 @@ def test_deposit_invalid_num_of_bottles(client):
 
 def test_deposit_more_than_100_bottles(client):
     with client.session_transaction() as session:
-        session["customer_id"] = 12 #Food Promoter ID with a subscription
+        session["customer_id"] = 12 
         session["pending_credits"] = 0.00
         session["credits"] = 0.00
         session["status"] = ""
@@ -53,12 +53,12 @@ def test_deposit_more_than_100_bottles(client):
     }, follow_redirects = True) #Used to implement redirect responses
     
     assert response.status_code == 200
-    assert b"Deposit successful!" in response.data
+    assert b"They must be verified first in order to use them" in response.data
     assert response.request.path == '/deposit'
 
 def test_deposit_less_than_1_bottle(client):
     with client.session_transaction() as session:
-        session["customer_id"] = 12 #Food Promoter ID with a subscription
+        session["customer_id"] = 12 
         session["pending_credits"] = 0.00
         session["credits"] = 0.00
         session["status"] = ""
