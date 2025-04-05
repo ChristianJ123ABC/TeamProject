@@ -75,18 +75,21 @@
 
             <br><br>
 
-            <div class = "foodCard">
-                <div class="card-group">
+            <div class="foodCard">
+                <div class="row justify-content-center">
                     {% for promotion in promotions %}
-                    <div class="card">
-                        <img class="card-img-top" src="{{ url_for('static', filename = promotion.image.replace('\\', '/')) }}" alt="Card image cap">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ promotion.caption}}</h5>
+                    <div class="col-md-3 mb-3"> 
+                        <div class="card">
+                            <img class="card-img-top" src="{{ url_for('static', filename=promotion.image.replace('\\', '/')) }}" alt="Card image cap">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ promotion.caption }}</h5>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
+            
               
           
             

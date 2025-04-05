@@ -72,6 +72,5 @@ def test_promotion_image_not_uploaded(client):
     
     assert response.status_code == 400
     assert response.request.path == '/postPromotion'
-
     
     

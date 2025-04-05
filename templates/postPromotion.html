@@ -75,13 +75,12 @@
                     {%endwith%}
             
             <h1>Food Promotion Page</h1>
-            <button class = "formButton" id = "formButton" onclick = "hideForm()">Add Promotion</button>
             
              
         
             
             <!-- Form used to add images to the slideshow -->
-            <form id = "upload" action="/postPromotion" method="POST" class = "upload" enctype="multipart/form-data" style="display: none";> <!-- hidden at first until add image button is pressed-->
+            <form id = "upload" action="/postPromotion" method="POST" class = "upload" enctype="multipart/form-data"> 
                 <h3>Advertisement Submission</h3>
                 <input type = "text" name = "caption" placeholder = "Enter caption">
                 <input type = "file" name = "image"  placeholder = "Add Image">
@@ -130,21 +129,7 @@
     
             
             <!-- function used to hide the form and reappear it -->
-            <script>
-                function hideForm(){
-                    var form = document.getElementById("upload")
-                    var button = document.getElementById("formButton")
-                    if(form.style.display == "block"){
-                        form.style.display = "none";
-                        button.textContent = "Add Promotion";
-                    }
-                    else{
-                        form.style.display = "block";
-                       
-                        button.textContent = "Hide Form";
-                    }
-                }
-            </script>
+           
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>        
         </body>

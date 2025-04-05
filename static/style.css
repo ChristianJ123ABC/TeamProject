@@ -785,13 +785,12 @@ END: COMPLETED BY CHRISTIAN
 */
 
 .foodCard img {
-    height: 600px;
+    height: 500px;
     object-fit: cover;
     
 }
 
-.foodCard{
-    max-width: 1500px;
+.foodCard .card{
     display: block;  
     margin: 20px auto;
 }

@@ -1259,6 +1259,7 @@ def postPromotion():
                 cursor.execute("SELECT id, image, caption FROM Promotions")
                 promotions = cursor.fetchall()
                 return render_template("postPromotion.html", promotions=promotions)
+            
         
             else:
                 flash("You must subscribe to our plan to use the food promotion!", "error")
@@ -1272,18 +1273,18 @@ def postPromotion():
         #Validation 
         if request.method == 'POST':
             image = request.files['image']
-
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
             if not image or image.filename == '':
                 flash('No selected file', 'error')
                 return redirect(url_for('postPromotion')) 
-            
+           
             if not allowed_file(image.filename):
                 flash('Invalid image type, use the following image extensions: .JPG, .PNG or .JPEG', 'error')
                 return redirect(url_for('postPromotion'))
             
             
             #Creates a filepath of uploads\x.jpg 
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
+            
             image.save(filepath)
             uploadFilePath= os.path.join('uploads', image.filename)
 
