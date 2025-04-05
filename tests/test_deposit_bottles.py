@@ -23,7 +23,7 @@ def app():
 def client(app):
     return app.test_client()
 
-def test_deposit_invalid_num_of_bottles(client):
+def test_deposit_more_than_100_bottles(client):
     with client.session_transaction() as session:
         session["customer_id"] = 12 #Customer test id
         session["pending_credits"] = 0.00
@@ -40,7 +40,7 @@ def test_deposit_invalid_num_of_bottles(client):
     assert response.request.path == '/deposit'
 
 
-def test_deposit_more_than_100_bottles(client):
+def test_deposit_valid_num_of_bottles(client):
     with client.session_transaction() as session:
         session["customer_id"] = 12 
         session["pending_credits"] = 0.00
