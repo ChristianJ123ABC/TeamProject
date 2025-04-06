@@ -736,6 +736,11 @@ def create_checkout_session():
             # Payment fully by credits
             user_credit -= total_amount
             session["credits"] = user_credit
+            cursor = mysql.connection.cursor()
+            cursor.execute("UPDATE Customers SET credits = %s WHERE customer_id = %s", (user_credit, session["customer_id"]))
+            mysql.connection.commit()
+            cursor.close()
+
             # Save order before clearing the cart
             save_order_to_db(cart, total_amount, session["customer_id"], mysql)
             session.pop('cart', None)
@@ -1082,9 +1087,15 @@ def cancel():
 def deposit():
     if request.method == "GET":
          # If the deposit was just verified, show a success message
-        if session.get("status") == "verified":
+        if session.get("status") == "verified" and session["credits"] != 0:
             flash(f"Your deposit has been verified! You now have €{session['credits']} in credits.", "success")
         return render_template("deposit.html",  status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
+
+    elif session.get("status") == "verified" and session["credits"] == 0:
+        session["status"] == "pending"
+        return render_template("deposit.html",  status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
+    
+        
     
     else:
         #If the input field is empty
@@ -1104,6 +1115,7 @@ def deposit():
         elif(bottles <= 0):
             flash("You cannot enter less than 1 bottle", 'warning')
             return redirect(url_for("deposit"))
+        
     
         
         else:
