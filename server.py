@@ -252,23 +252,28 @@ def register():
         
         #Depending on the role, specific data will be placed into that role
         if(role == "customer"):
+            flash("Customer account created successfully!", 'success')
             cursor.execute("INSERT INTO Customers (full_name, phone_number,address) VALUES (%s, %s, %s)", 
                        (full_name, phone_number, address))
             mysql.connection.commit()
+            
 
         elif role == "driver":
+            flash("Driver account created successfully!", 'success')
             cursor.execute("INSERT INTO Drivers (full_name, phone_number) VALUES (%s, %s)",
                        (full_name, phone_number))
             mysql.connection.commit()
+            
 
         
 
         elif(role == "food_owner"):
+            flash("Food Promoter account created successfully!", 'success')
             cursor.execute("INSERT INTO FoodOwners (full_name, phone_number) VALUES (%s, %s)", 
                        (full_name, phone_number))
             mysql.connection.commit()
         
-        flash("Account created successfully!", 'success')
+        
     except Exception as e:
       logging.error(f"Error saving user data: {str(e)}")
       mysql.connection.rollback()

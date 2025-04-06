@@ -1,9 +1,14 @@
+#Resources
+#https://flask.palletsprojects.com/en/stable/testing/
+#https://www.youtube.com/watch?v=RLKW7ZMJOf4&t=595s
+#https://flask.palletsprojects.com/en/stable/config/
+##https://docs.pytest.org/en/7.1.x/how-to/skipping.html
+
 import pytest
 from server import app as create_app
 from pathlib import Path
 import MySQLdb
 resources = Path(__file__).parent.parent / "tests" / "resources" #Folder with designated files to test
-
 
 @pytest.fixture()
 def app():
