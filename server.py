@@ -741,6 +741,11 @@ def create_checkout_session():
             cursor.execute("UPDATE Customers SET credits = %s WHERE customer_id = %s", (user_credit, session["customer_id"]))
             mysql.connection.commit()
             cursor.close()
+            
+            cursor = mysql.connection.cursor()
+            cursor.execute("UPDATE Customers SET status = '' WHERE customer_id = %s", (session["customer_id"],))
+            mysql.connection.commit()
+            cursor.close()
 
             # Save order before clearing the cart
             save_order_to_db(cart, total_amount, session["customer_id"], mysql)
@@ -777,6 +782,7 @@ def create_checkout_session():
     save_order_to_db(cart, total_amount, session["customer_id"], mysql)
     session.pop('cart', None)
     session.modified = True
+    
     flash("Payment Successful! No additional payment required.", "success")
     return redirect(url_for('payment_success'))
 
@@ -791,6 +797,15 @@ def payment_success():
         save_order_to_db(cart, total_amount, session["customer_id"], mysql)
         session.pop('cart', None)
         session.modified = True
+        user_credit = float(session.get("credits", 0))
+        cursor = mysql.connection.cursor()
+        cursor.execute("UPDATE Customers SET credits = %s WHERE customer_id = %s", (user_credit, session["customer_id"]))
+        mysql.connection.commit()
+        
+        cursor.execute("UPDATE Customers SET status = '' WHERE customer_id = %s", (session["customer_id"],))
+        mysql.connection.commit()
+
+        cursor.close()
     flash("Payment Successful!", "success")
     return redirect(url_for('customer'))
 
@@ -1092,9 +1107,6 @@ def deposit():
             flash(f"Your deposit has been verified! You now have €{session['credits']} in credits.", "success")
         return render_template("deposit.html",  status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
 
-    elif session.get("status") == "verified" and session["credits"] == 0:
-        session["status"] == "pending"
-        return render_template("deposit.html",  status=session["status"], credits=session["credits"], customer_id=session["customer_id"])
     
         
     
@@ -1153,6 +1165,8 @@ def redeemCredits():
     if credits <= 0 or credits == 0 or credits == 0.00 or credits == None: 
         flash("You cannot redeem any credits since you do not have any", 'error')
         return redirect(url_for("deposit"))
+    
+
     
 
     
