@@ -5,6 +5,10 @@
 #https://docs.pytest.org/en/6.2.x/fixture.html
 #https://stackoverflow.com/questions/372885/how-do-i-connect-to-a-mysql-database-in-python
 
+#CHRISTIAN'S TEST CASE
+#
+#
+
 import pytest
 from server import app as create_app
 from pathlib import Path

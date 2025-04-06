@@ -3,6 +3,10 @@
 #https://www.youtube.com/watch?v=RLKW7ZMJOf4&t=595s
 #https://flask.palletsprojects.com/en/stable/config/
 
+#CHRISTIAN'S TEST CASE
+#
+#
+
 import pytest
 from flask import session
 from server import app as create_app
