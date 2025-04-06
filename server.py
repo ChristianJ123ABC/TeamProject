@@ -736,6 +736,7 @@ def create_checkout_session():
             # Payment fully by credits
             user_credit -= total_amount
             session["credits"] = user_credit
+            #Updates the credits of the user
             cursor = mysql.connection.cursor()
             cursor.execute("UPDATE Customers SET credits = %s WHERE customer_id = %s", (user_credit, session["customer_id"]))
             mysql.connection.commit()
