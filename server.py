@@ -73,7 +73,7 @@ import random, string
 
 
 
-#app = Flask(__name__, static_url_path="", static_folder="public")
+
 
 # Stripe API Keys 
 stripe.api_key = "sk_test_51QtHxkE9I53MxGEG7q4d6GghW7i88Wdb1ddzxsahEuswMEzNK1qW2EO3RWguhlwcEWOzZAyXl8SwsKSnwzP0Gln700uKNfydfi"
