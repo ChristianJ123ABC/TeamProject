@@ -1062,7 +1062,8 @@ def create_checkout_session_subscription():
         # Store subscription details in the database
         cursor = mysql.connection.cursor()
         cursor.execute("""
-            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, status)
+            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date,
+                        subscription_end_date, next_due_date, status)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             session["user_id"],
