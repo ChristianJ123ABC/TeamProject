@@ -73,7 +73,7 @@ import random, string
 
 
 
-#app = Flask(__name__, static_url_path="", static_folder="public")
+
 
 # Stripe API Keys 
 stripe.api_key = "sk_test_51QtHxkE9I53MxGEG7q4d6GghW7i88Wdb1ddzxsahEuswMEzNK1qW2EO3RWguhlwcEWOzZAyXl8SwsKSnwzP0Gln700uKNfydfi"
@@ -1062,7 +1062,8 @@ def create_checkout_session_subscription():
         # Store subscription details in the database
         cursor = mysql.connection.cursor()
         cursor.execute("""
-            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date, subscription_end_date, next_due_date, status)
+            INSERT INTO Subscriptions (promoter_id, stripe_subscription_id, subscription_start_date,
+                        subscription_end_date, next_due_date, status)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             session["user_id"],
